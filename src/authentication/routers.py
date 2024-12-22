@@ -2,12 +2,12 @@ import datetime
 
 from fastapi import HTTPException, Depends, APIRouter
 
-from PPgroup5.pythonBackEnd.database.database import User, get_db, Session
-from PPgroup5.pythonBackEnd.auth.models import UserLogin, UserSignUp
-from PPgroup5.pythonBackEnd.auth.schemas import is_login, error_email_userexists, \
+from src.database.database import User, get_db, Session
+from models import UserLogin, UserSignUp
+from schemas import is_login, error_email_userexists, \
     error_telephone_userexists, error_login_udentified, nothing
-from PPgroup5.pythonBackEnd.auth.tokens_hashs import authenticated_user, generate_token, creating_hash_salt
-from PPgroup5.pythonBackEnd.models.models import MyUserOut
+from tokens_hashs import authenticated_user, generate_token, creating_hash_salt
+from src.models.models import MyUserOut
 
 router = APIRouter(
     prefix="/auth",

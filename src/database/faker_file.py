@@ -8,7 +8,7 @@
 from faker import Faker
 from sqlalchemy import func
 
-from PPgroup5.pythonBackEnd.database.database import User, Route, Coordinate, Estimation, session
+from src.database.database import User, Route, Coordinate, Estimation, session
 import random
 
 fake = Faker()

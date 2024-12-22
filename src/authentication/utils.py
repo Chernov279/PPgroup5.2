@@ -1,9 +1,3 @@
-import re
-from fastapi import HTTPException
-
-from PPgroup5.pythonBackEnd.database.database import session, User
-
-
 def is_telephone_number(telephone: str):
     """
     Проверяет, является ли строка телефонным номером.

@@ -3,7 +3,7 @@ from pydantic import BaseModel, validator
 from typing import List
 from fastapi import HTTPException, Depends
 
-from PPgroup5.pythonBackEnd.database.database import User, Route, Coordinate, Estimation, Session, get_db
+from src.database.database import User, Route, Coordinate, Estimation, Session, get_db
 
 
 class Route_Data(BaseModel):

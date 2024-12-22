@@ -1,9 +1,10 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey, DateTime, Boolean, ARRAY
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from PPgroup5.pythonBackEnd.pg import url
+
+from config.configuration import settings
 
 Base = declarative_base()
-engine = create_engine(url)
+engine = create_engine(settings.database_url)
 # Создание сессии для работы с базой данных
 Session = sessionmaker(engine)
 session = Session()
@@ -136,7 +137,3 @@ class Estimation(Base):
     datetime = Column(DateTime, nullable=False)
     comment = Column(String)
     route = relationship("Route", back_populates="estimations")
-
-
-# Создание всех таблиц в базе данных
-Base.metadata.create_all(engine)

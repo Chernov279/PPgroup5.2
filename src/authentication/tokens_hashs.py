@@ -2,7 +2,7 @@ import secrets
 import string
 import hashlib
 import os
-from PPgroup5.pythonBackEnd.database.database import User, session
+from src.database.database import User, session
 
 
 def generate_token(length=10):
