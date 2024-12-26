@@ -8,3 +8,6 @@ class UserOut(BaseModel):
     sex: str
     authorized_time: str
     birth: str
+
+    class Config:
+        from_attributes = True
