@@ -6,7 +6,7 @@ from src.dependencies.user_dependencies import get_user_service
 from src.services.user_service import UserService
 from src.user.schemas import UserOut
 
-user = APIRouter(prefix="/users", tags=["/users", "хулумулу"])
+user = APIRouter(prefix="/users", tags=["/users"])
 
 
 @user.get("/", response_model=List[UserOut])

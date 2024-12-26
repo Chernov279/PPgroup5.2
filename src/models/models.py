@@ -19,8 +19,6 @@ class User(Base):
     sex (str): Пол пользователя (male = мужчина, female = женщина).
     favorite_routes (list[int]): Список избранных маршрутов.
     hashed_password (str): Хэшированный пароль пользователя.
-    salt_hashed_password (str): Соль для хэширования пароля.
-    token_mobile (str): Токен мобильного приложения.
     authorizated_at (DateTime): Время авторизации пользователя.
     birth (str): Дата рождения пользователя.
     routes (relationship): Связь с маршрутами.
@@ -36,8 +34,6 @@ class User(Base):
     sex = Column(String)
     favorite_routes = Column(ARRAY(Integer), default=[])
     hashed_password = Column(String, nullable=False)
-    salt_hashed_password = Column(String, nullable=False)
-    token_mobile = Column(String, nullable=False)
     authorized_time = Column(DateTime)
     birth = Column(String)
     routes = relationship("Route", back_populates="user")

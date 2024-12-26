@@ -31,7 +31,7 @@ class UserRepository:
         """
         Создать нового пользователя.
         """
-        user = User(email=email, hashed_password=hashed_password, name=name)
+        user = User(name=name, email=email, hashed_password=hashed_password)
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)

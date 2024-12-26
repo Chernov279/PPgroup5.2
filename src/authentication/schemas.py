@@ -1,12 +1,20 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
-class UserLogin(BaseModel):
-    login: str = Field(nullable=False)
-    password: str = Field(min_length=3, max_length=64, nullable=True)
+class UserAuthIn(BaseModel):
+    email: str
+    password: str
+    name: str
+
+    class Config:
+        from_attributes = True
 
 
-class UserSignUp(UserLogin):
-    name: str = Field(min_length=3, max_length=64)
+class UserAuthOut(BaseModel):
+    email: str
+    name: str
+    refresh_token: str
+    token_type: str
 
-
+    class Config:
+        from_attributes = True

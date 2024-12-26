@@ -26,6 +26,7 @@ config.set_section_option(section, "sqlalchemy.url", settings_db.DATABASE_URL)
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 
+from src.models.models import User, Route, Coordinate, Estimation
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
