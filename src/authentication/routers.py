@@ -1,22 +1,12 @@
 import datetime
 
-from fastapi import HTTPException, Depends, APIRouter
+from fastapi import HTTPException, Depends
 
-from src.database.database import User, get_db, Session
-from models import UserLogin, UserSignUp
-from schemas import is_login, error_email_userexists, \
-    error_telephone_userexists, error_login_udentified, nothing
-from tokens_hashs import authenticated_user, generate_token, creating_hash_salt
-from src.models.models import MyUserOut
-
-router = APIRouter(
-    prefix="/auth",
-    tags=["auth"]
-)
+from src.routes import auth
 
 
-@router.post("/authorization")
-def create_user(user_data: UserSignUp, session: Session = Depends(get_db)):
+@auth.post("/", response_model=auth_user_out)
+def create_user(token: Annotated[str, Depends(oauth2_scheme)]):
     """
     Создает нового пользователя в системе.
 

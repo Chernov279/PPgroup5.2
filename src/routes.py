@@ -1,7 +1,6 @@
-from fastapi import APIRouter
+from .user.routers import user
 
-auth = APIRouter(prefix="/auth", tags=["/auth", "/login"])
 
 routes = [
-    auth,
+    user,
           ]

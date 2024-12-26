@@ -1,0 +1,25 @@
+from pydantic import ValidationError
+from pydantic_settings import BaseSettings
+from pathlib import Path
+
+
+class TokenSettings(BaseSettings):
+    # получение чувствительных данных из корневой папки
+
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    REFRESH_TOKEN_EXPIRE_DAYS: int
+
+    # получение данных из файла .env
+    class Config:
+        env_file = str(Path(__file__).parent.parent.parent / ".env")
+        extra = "ignore"
+
+
+try:
+    settings_token = TokenSettings()
+except ValidationError as e:
+    print("Ошибка валидации Pydantic:", e)
+except ValueError as e:
+    print("Ошибка инициализации настроек:", e)

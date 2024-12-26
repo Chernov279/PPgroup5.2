@@ -5,8 +5,8 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from config.config import settings
-from src.database.database import Base
+from src.config.database.db_config import settings_db
+from src.config.database.db_helper import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -19,7 +19,7 @@ if config.config_file_name is not None:
 
 section = config.config_ini_section
 
-config.set_section_option(section, "sqlalchemy.url", settings.database_url)
+config.set_section_option(section, "sqlalchemy.url", settings_db.DATABASE_URL)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

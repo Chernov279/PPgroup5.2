@@ -1,23 +1,15 @@
-import datetime
-
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException
-from geopy.distance import great_circle as GC
-
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from config.configuration import settings
-from src.current_user.me import profile
-from src.database.database import User, Route, Coordinate, Estimation, get_db, Session
-from src.routes import routes
-from src.schemas.schemas import not_found_error, Route_Data, user_search, route_search, time_redakt, \
-    avg_estimation
+from .config.project_config import settings
+from .routes import routes
 
 
 def get_application() -> FastAPI:
     application = FastAPI(
-        title=settings.project_name,
-        debug=settings.debug
+        title=settings.PROJECT_NAME,
+        debug=settings.DEBUG
     )
     for route in routes:
         application.include_router(route)
