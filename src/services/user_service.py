@@ -27,21 +27,23 @@ class UserService:
         try:
             return self.user_repo.create_user(name, email, hashed_password)
         except Exception as e:
-            HTTPException(status_code=500, detail="User not created")
+            raise HTTPException(status_code=500, detail="User not created")
 
-    def update_user_service(self, user_id: int, name: str, is_active: bool) -> User | None:
+    def update_user_service(self, user_id: int, name: str) -> User | None:
         """
         Обновить данные пользователя.
         """
         try:
-            user = self.user_repo.update_user(user_id, name, is_active)
+            user = self.user_repo.update_user(user_id, name)
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
             return user
-        except Exception as e:
-            HTTPException(status_code=500, detail="User not updated")
+        except HTTPException as e:
+            raise e
+        except Exception:
+            raise HTTPException(status_code=500, detail="User not updated")
 
-    def delete_user_service(self, user_id: int) -> None:
+    def delete_user_service(self, user_id: int) -> bool:
         """
         Удалить пользователя.
         """
@@ -49,5 +51,8 @@ class UserService:
             success = self.user_repo.delete_user(user_id)
             if not success:
                 raise HTTPException(status_code=404, detail="User not found")
+            return success
+        except HTTPException as e:
+            raise e
         except Exception as e:
-            HTTPException(status_code=500, detail="User not deleted")
+            raise HTTPException(status_code=500, detail="User not deleted")

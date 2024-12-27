@@ -3,6 +3,7 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from src.models.models import User
+from src.utils.logging_utils import log_errors
 
 
 class UserRepository:
@@ -37,17 +38,17 @@ class UserRepository:
         self.db.refresh(user)
         return user
 
-    def update_user(self, user_id: int, name: str, is_active: bool) -> User | None:
+    def update_user(self, user_id: int, name: str) -> User | None:
         """
         Обновить информацию о пользователе.
         """
         user = self.get_user_by_id(user_id)
         if user:
             user.name = name
-            user.is_active = is_active
             self.db.commit()
             self.db.refresh(user)
-        return user
+            return user
+        return None
 
     def delete_user(self, user_id: int) -> bool:
         """

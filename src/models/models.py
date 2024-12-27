@@ -1,6 +1,8 @@
+from datetime import datetime
+
 from sqlalchemy import Column, Integer, String, ARRAY, DateTime, Float, ForeignKey
 from sqlalchemy.orm import relationship
-
+from sqlalchemy.sql import func
 from src.config.database.db_helper import Base
 
 
@@ -34,7 +36,8 @@ class User(Base):
     sex = Column(String)
     favorite_routes = Column(ARRAY(Integer), default=[])
     hashed_password = Column(String, nullable=False)
-    authorized_time = Column(DateTime)
+    authorized_time = Column(DateTime, default=func.now())
+    last_updated_time = Column(DateTime, default=func.now(), onupdate=func.now())
     birth = Column(String)
     routes = relationship("Route", back_populates="user")
 
