@@ -1,94 +1,34 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, status, APIRouter
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from fastapi import Depends, APIRouter, Request
+from fastapi.security import OAuth2PasswordRequestForm
 
-fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "fakehashedsecret",
-        "disabled": False,
-    },
-    "alice": {
-        "username": "alice",
-        "full_name": "Alice Wonderson",
-        "email": "alice@example.com",
-        "hashed_password": "fakehashedsecret2",
-        "disabled": True,
-    },
-}
+from src.authentication.schemas import AccessTokenOut
+from src.dependencies.token_dependencies import get_token_db_service, get_token_service
+from src.token.token_service import TokenService
 
-token = APIRouter()
+token = APIRouter(tags=["token"])
 
 
-def fake_hash_password(password: str):
-    return "fakehashed" + password
-
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-
-class User(BaseModel):
-    username: str
-    email: str | None = None
-    full_name: str | None = None
-    disabled: bool | None = None
-
-
-class UserInDB(User):
-    hashed_password: str
-
-
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
-        return UserInDB(**user_dict)
-
-
-def fake_decode_token(token):
-    # This doesn't provide any security at all
-    # Check the next version
-    user = get_user(fake_users_db, token)
-    return user
-
-
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-    user = fake_decode_token(token)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return user
-
-
-def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)],
+@token.post("/token", response_model=AccessTokenOut, summary="logining by email and password, returns tokens")
+def login_by_token_route(
+        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+        token_service: TokenService = Depends(get_token_db_service),
 ):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
+    return token_service.login_user_service(form_data)
 
 
-@token.post("/token")
-def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    user_dict = fake_users_db.get(form_data.username)
-    if not user_dict:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
-    user = UserInDB(**user_dict)
-    hashed_password = fake_hash_password(form_data.password)
-    if not hashed_password == user.hashed_password:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
-
-    return {"access_token": user.username, "token_type": "bearer"}
-
-
-@token.get("/users/me")
-def read_users_me(
-    current_user: Annotated[User, Depends(get_current_active_user)],
+@token.post("/get_token", response_model=AccessTokenOut, summary="get access token by refresh token")
+def get_access_token_route(
+        request: Request,
+        token_service: TokenService = Depends(get_token_service),
 ):
-    return current_user
+    """
+    Получение нового access_token по refresh_token, который передаётся через cookie.
+
+    Инструкция:
+    1. refresh_token должен быть сохранён в cookie (HttpOnly).
+    2. Access токен возвращается в теле ответа.
+    """
+    return token_service.get_access_token_service(request)
+

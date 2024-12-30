@@ -2,8 +2,10 @@ from typing import List
 
 from fastapi import Depends, APIRouter
 
+from src.dependencies.token_dependencies import get_token_service
 from src.dependencies.user_dependencies import get_user_service
-from src.services.user_service import UserService
+from src.token.token_service import TokenService
+from src.user.user_service import UserService
 from src.user.schemas import UserOut, UserCreateIn, UserUpdateIn
 
 user = APIRouter(prefix="/users", tags=["/users"])
@@ -25,8 +27,14 @@ def create_user_route(user_data: UserCreateIn, user_service: UserService = Depen
 
 
 @user.put("/{user_id}", response_model=UserOut)
-def update_user_route(user_data: UserUpdateIn, user_service: UserService = Depends(get_user_service)):
-    return user_service.update_user_service(user_data.user_id, user_data.name)
+def update_user_route(
+        user_data: UserUpdateIn,
+        user_service: UserService = Depends(get_user_service),
+        token_service: TokenService = Depends(get_token_service)):
+    return user_service.update_user_service(
+        token_service.get_user_id_by_token_service(),
+        user_data
+    )
 
 
 @user.delete("/{user_id}", response_model=bool)

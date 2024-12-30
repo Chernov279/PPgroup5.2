@@ -3,7 +3,7 @@ from typing import List
 from fastapi import HTTPException
 
 from src.models.models import User
-from src.repositories.user_repositories import UserRepository
+from src.user.user_repositories import UserRepository
 
 
 class UserService:

@@ -13,8 +13,12 @@ class UserCreateIn(BaseModel):
 
 
 class UserUpdateIn(BaseModel):
-    user_id: int
     name: str
+    surname: str
+    patronymic: str
+    location: str
+    sex: str
+    birth: str
 
     class Config:
         from_attributes = True

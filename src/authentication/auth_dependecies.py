@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from src.authentication.auth_service import UserAuthService
 from src.config.database.db_helper import get_db
-from src.repositories.user_repositories import UserRepository
+from src.user.user_repositories import UserRepository
 
 
 def get_user_auth_service(db: Session = Depends(get_db)) -> UserAuthService:

@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 
-from src.authorization.token_services import verify_token
+from src.token.token_services import verify_token
 from src.models.models import User
 
 

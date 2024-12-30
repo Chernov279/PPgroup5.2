@@ -3,7 +3,6 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from src.models.models import User
-from src.utils.logging_utils import log_errors
 
 
 class UserRepository:

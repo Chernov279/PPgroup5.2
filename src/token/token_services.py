@@ -5,7 +5,7 @@ from typing import Optional
 
 from src.config.token_config import settings_token
 from src.models.models import User
-from src.repositories.user_repositories import UserRepository
+from src.user.user_repositories import UserRepository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
