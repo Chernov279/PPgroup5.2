@@ -12,11 +12,19 @@ def create_access_jwt_token(
         expires_delta: timedelta | None = None) -> str:
     """
     Генерация access JWT токена.
+
+    ### Входные параметры:
+    - `data` (dict | None): Дополнительные данные для токена. Обязательно должен хранить user_id, если передается.
+    - `user_id` (int | None): Идентификатор пользователя.
+    - `expires_delta` (timedelta | None): Время жизни токена. Если не передано, используется значение по умолчанию.
+
+    ### Возвращаемые данные:
+    - `str`: Сгенерированный access токен.
     """
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(settings_token.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.utcnow() + timedelta(minutes=settings_token.ACCESS_TOKEN_EXPIRE_MINUTES)
     if data is not None:
         to_encode = data.copy()
         to_encode.update({"exp": expire})
@@ -38,11 +46,19 @@ def create_refresh_jwt_token(
         expires_delta: timedelta | None = None) -> str:
     """
     Генерация refresh JWT токена.
+
+    ### Входные параметры:
+    - `data` (dict | None): Дополнительные данные для токена.
+    - `user_id` (int | None): Идентификатор пользователя.
+    - `expires_delta` (timedelta | None): Время жизни токена. Если не передано, используется значение по умолчанию.
+
+    ### Возвращаемые данные:
+    - `str`: Сгенерированный refresh токен.
     """
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(settings_token.REFRESH_TOKEN_EXPIRE_DAYS)
+        expire = datetime.utcnow() + timedelta(days=settings_token.REFRESH_TOKEN_EXPIRE_DAYS)
     if data is not None:
         to_encode = data.copy()
         to_encode.update({"exp": expire})
@@ -61,6 +77,17 @@ def create_refresh_jwt_token(
 def verify_jwt_token(token: str) -> dict | None:
     """
     Проверка валидности JWT токена.
+
+    ### Входные параметры:
+    - `token` (str): Токен.
+
+    ### Логика:
+    1. Декодирует токен и проверяет его на валидность.
+    2. Если токен истёк или повреждён, вызывает исключение.
+
+    ### Возвращаемые данные:
+    - `dict`: Декодированный payload токена.
+    - `None`: Если токен недействителен или истёк.
     """
     try:
         decoded_jwt = jwt.decode(token, settings_token.SECRET_KEY, algorithms=[settings_token.ALGORITHM])

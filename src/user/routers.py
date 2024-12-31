@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import Depends, APIRouter
 
-from src.dependencies.token_dependencies import get_token_service
+from src.token.token_dependencies import get_token_service
 from src.dependencies.user_dependencies import get_user_service
 from src.token.token_service import TokenService
 from src.user.user_service import UserService

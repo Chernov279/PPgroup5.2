@@ -1,14 +1,19 @@
 from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from src.authentication.auth_service import UserAuthService
+from .auth_service import UserAuthService
 from src.config.database.db_helper import get_db
-from src.user.user_repositories import UserRepository
 
 
-def get_user_auth_service(db: Session = Depends(get_db)) -> UserAuthService:
+def get_user_auth_service_db(db: Session = Depends(get_db)) -> UserAuthService:
     """
-    Фабричная функция для создания UserService с передачей нужных зависимостей.
+    Фабричная функция для создания UserService с передачей сессии БД.
     """
-    user_repo = UserRepository(db)
-    return UserAuthService(user_repo)
+    return UserAuthService(db)
+
+
+def get_user_auth_service() -> UserAuthService:
+    """
+    Фабричная функция для создания UserService без передачи сессии БД.
+    """
+    return UserAuthService()

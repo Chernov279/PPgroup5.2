@@ -1,41 +1,71 @@
-from typing import Union
+from fastapi import HTTPException
 
-from fastapi import HTTPException, Depends
-
-from src.authentication.schemas import TokensOut
 from src.authentication.utils.security import verify_password
 from src.config.database.db_helper import Session
-from src.config.token_config import settings_token, oauth2_scheme
+from src.config.token_config import settings_token
 from src.models.models import User
-from src.token.token_repositories import TokenRepository
-from src.utils.token_utils import create_refresh_jwt_token, create_access_jwt_token, verify_jwt_token
+from src.token.token_repository import TokenRepository
 
 
 class AuthTokenUOW:
+    """
+    Unit of Work (UoW) для работы с авторизацией и токенами (refresh и access).
+
+    ### Основные задачи:
+    - Создание refresh и access токенов.
+    - Управление cookies для refresh токенов.
+
+    ###Инициализация UoW для токенов.
+
+    - `db` (Session): Экземпляр SQLAlchemy-сессии для работы с базой данных.
+
+    Если передана сессия `db`, инициализируются репозитории с этой сессией.
+    Если `db` не передана, используются репозитории с дефолтными параметрами.
+        """
+
     def __init__(
             self,
             db: Session = None,
-            token_repository: TokenRepository = None
     ):
         self.db = db
-        self.token_repository = token_repository
+        if db:
+            self.token_repository = TokenRepository(db)
+        else:
+            self.token_repository = TokenRepository()
 
-    @staticmethod
-    def create_access_token_uow(refresh_token: str) -> str | None:
-        payload = verify_jwt_token(refresh_token)
-        if payload.get("type", "") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token")
-        return create_access_jwt_token(payload)
+    def create_refresh_token_uow(self, user_id):
+        """
+        Создание refresh токена.
 
-    @staticmethod
-    def create_refresh_token_uow(user_id: Union[int, str]) -> str | None:
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        if isinstance(user_id, str):
-            user_id = int(user_id)
-        refresh_token = create_refresh_jwt_token(user_id=user_id)
-        return refresh_token
+        ### Входные параметры:
+        - `user_id` (int): Идентификатор пользователя.
 
+        ### Логика:
+        1. Вызывает `create_refresh_token_rep` в `TokenRepository`.
+        2. Возвращает сгенерированный токен.
+
+        ### Возвращаемые данные:
+        - `str`: Сгенерированный refresh токен.
+        """
+        return self.token_repository.create_refresh_token_rep(user_id)
+
+    def create_access_token_uow(self, refresh_token):
+        """
+        Создание access токена.
+
+        ### Входные параметры:
+        - `refresh_token` (str): Действующий refresh токен.
+
+        ### Логика:
+        1. Вызывает `create_access_token_rep` в `TokenRepository`.
+        2. Возвращает сгенерированный токен.
+
+        ### Возвращаемые данные:
+        - `str`: Сгенерированный access токен.
+        """
+        return self.token_repository.create_access_token_rep(refresh_token)
+
+    # TODO пофиксить это чудо
     def get_login_user_uow(self, email: str, password: str) -> User | None:
         user = self.db.query(User).filter(User.email == email).first()
         if not user or not verify_password(password, user.hashed_password):
@@ -43,30 +73,17 @@ class AuthTokenUOW:
         return user
 
     @staticmethod
-    def get_user_id_by_token_uow(token: str) -> int | None:
-        payload = verify_jwt_token(token)
-        user_id = payload.get("sub", None)
-        if user_id:
-            return int(user_id)
-        return None
-
-    @staticmethod
-    def get_user_status_by_token_uow(token: str) -> str | None:
-        payload = verify_jwt_token(token)
-        user_status = payload.get("status", None)
-        if user_status:
-            return user_status
-        return None
-
-    def get_user_by_token_uow(self, token: str = Depends(oauth2_scheme)) -> User | None:
-        payload = verify_jwt_token(token)
-        user_id = payload.get("sub")
-        if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        return self.token_repository.get_current_user(token)
-
-    @staticmethod
     def set_refresh_token_cookie_uow(response, refresh_token: str) -> None:
+        """
+        Устанавливает refresh токен в cookies.
+
+        ### Входные параметры:
+        - `response` (JSONResponse): Ответ, в который нужно добавить cookie.
+        - `refresh_token` (str): Значение refresh токена.
+
+        ### Логика:
+        Устанавливает cookie с ключом `refresh_token`.
+        """
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
@@ -77,15 +94,18 @@ class AuthTokenUOW:
             path="/get_token",
         )
 
-    # def login_user_service(
-    #     self,
-    #     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    #     user_auth_service: UserAuthService = Depends(get_user_auth_service),
-    #     ) -> JSONResponse:
-    #     payload = user_auth_service.login_user(form_data.username, form_data.password)
-    #     response = JSONResponse(content={
-    #         "access_token": payload.access_token,
-    #         "token_type": "bearer",
-    #     })
-    #     self.set_refresh_token_cookie(response, payload.refresh_token)
-    #     return response
+    @staticmethod
+    def delete_refresh_token_cookie_uow(response) -> None:
+        """
+        Удаляет refresh токен из cookies.
+
+        ### Входные параметры:
+        - `response` (JSONResponse): Ответ, из которого нужно удалить cookie.
+
+        ### Логика:
+        1. Удаляет cookie с ключом `refresh_token` и путем `/get_token`.
+        """
+        response.delete_cookie(
+            key="refresh_token",
+            path="/get_token"
+        )

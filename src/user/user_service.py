@@ -56,3 +56,12 @@ class UserService:
             raise e
         except Exception as e:
             raise HTTPException(status_code=500, detail="User not deleted")
+    #
+    # def get_current_user(self, token: Annotated[str, Depends(oauth2_scheme)]) -> User | None:
+    #     """
+    #     Получить пользователя по токену.
+    #     """
+    #     user_id = verify_jwt_token(token).get("sub", None)
+    #     if user_id:
+    #         return self.db.query(User).filter(User.id == int(user_id)).first()
+
