@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 import jwt
 from fastapi import HTTPException
 
-from src.config.token_config import settings_token
+from ..config.token_config import settings_token
 
 
 def create_access_jwt_token(

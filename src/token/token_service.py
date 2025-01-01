@@ -4,9 +4,9 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 
-from src.config.database.db_helper import Session
-from src.repositories.uow.auth_token import AuthTokenUOW
-from src.token.token_repository import TokenRepository
+from ..config.database.db_helper import Session
+from ..repositories.uow.auth_token import AuthTokenUOW
+from .token_repository import TokenRepository
 
 
 class TokenService:

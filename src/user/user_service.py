@@ -2,13 +2,21 @@ from typing import List
 
 from fastapi import HTTPException
 
-from src.models.models import User
-from src.user.user_repositories import UserRepository
+from ..config.database.db_helper import Session
+from ..models.models import User
+from ..repositories.uow.user_token import UserTokenUOW
+from .user_schemas import UserCreateIn, UserUpdateIn
+from .user_repositories import UserRepository
 
 
 class UserService:
-    def __init__(self, user_repo: UserRepository):
-        self.user_repo = user_repo
+    def __init__(self, db: Session = None):
+        if db:
+            self.user_repo = UserRepository(db)
+            self.user_token_uwo = UserTokenUOW(db)
+        else:
+            self.user_repo = UserRepository()
+            self.user_token_uwo = UserTokenUOW()
 
     def get_user_or_404_service(self, user_id: int) -> User:
         user = self.user_repo.get_user_by_id(user_id)
@@ -20,48 +28,55 @@ class UserService:
         user = self.user_repo.get_users()
         return user
 
-    def create_user_service(self, name: str, email: str, hashed_password: str, ) -> User | None:
+    def create_user_service(self, user_data: UserCreateIn) -> User | None:
         """
         Создать нового пользователя.
         """
         try:
-            return self.user_repo.create_user(name, email, hashed_password)
+            return self.user_repo.create_user(user_data.name, user_data.email, user_data.hashed_password)
+        except HTTPException as e:
+            raise e
         except Exception as e:
             raise HTTPException(status_code=500, detail="User not created")
 
-    def update_user_service(self, user_id: int, name: str) -> User | None:
+    def get_user_me_service(self, token: str):
+        user = self.user_token_uwo.get_user_by_token_uow(token)
+        if user:
+            return user
+        return HTTPException(status_code=404, detail="User not found")
+
+    def update_user_service(
+            self,
+            user_data: UserUpdateIn,
+            token: str
+    ) -> User | None:
         """
         Обновить данные пользователя.
         """
         try:
-            user = self.user_repo.update_user(user_id, name)
+            user = self.user_token_uwo.get_user_by_token_uow(token)
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
-            return user
+            updated_user = self.user_repo.update_user(user, user_data)
+            if updated_user:
+                return updated_user
+            raise HTTPException(status_code=500, detail="User not updated")
         except HTTPException as e:
             raise e
         except Exception:
             raise HTTPException(status_code=500, detail="User not updated")
 
-    def delete_user_service(self, user_id: int) -> bool:
+    def delete_user_service(self, token: str) -> HTTPException:
         """
         Удалить пользователя.
         """
         try:
-            success = self.user_repo.delete_user(user_id)
+            user = self.user_token_uwo.get_user_by_token_uow(token)
+            success = self.user_repo.delete_user(user)
             if not success:
                 raise HTTPException(status_code=404, detail="User not found")
-            return success
+            return HTTPException(status_code=200, detail="User successfully deleted")
         except HTTPException as e:
             raise e
         except Exception as e:
             raise HTTPException(status_code=500, detail="User not deleted")
-    #
-    # def get_current_user(self, token: Annotated[str, Depends(oauth2_scheme)]) -> User | None:
-    #     """
-    #     Получить пользователя по токену.
-    #     """
-    #     user_id = verify_jwt_token(token).get("sub", None)
-    #     if user_id:
-    #         return self.db.query(User).filter(User.id == int(user_id)).first()
-

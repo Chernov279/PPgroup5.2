@@ -1,13 +1,14 @@
 from fastapi import HTTPException
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
 
 from .auth_schemas import UserAuthIn, UserLoginIn
 from .utils.auth_utils import is_valid_email
 from .utils.security import hash_password, verify_password
-from src.repositories.uow.auth_token import AuthTokenUOW
-#TODO убрать импорт UserRepository из севриса
-from src.user.user_repositories import UserRepository
-from sqlalchemy.orm import Session
+from ..repositories.uow.auth_token import AuthTokenUOW
+# TODO убрать импорт UserRepository из сервиса
+from ..user.user_repositories import UserRepository
+
 
 
 class UserAuthService:

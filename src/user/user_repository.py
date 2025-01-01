@@ -1,14 +1,12 @@
 from typing import List
 
-from fastapi import Depends
 from sqlalchemy.orm import Session
 
-from src.config.database.db_helper import get_db
-from src.models.models import User
+from ..models.models import User
 
 
 class UserRepository:
-    def __init__(self, db: Session = Depends(get_db)):
+    def __init__(self, db: Session = None):
         self.db = db
 
     def get_user_by_id(self, user_id: int) -> User | None:
@@ -39,23 +37,51 @@ class UserRepository:
         self.db.refresh(user)
         return user
 
-    def update_user(self, user_id: int, name: str) -> User | None:
+    def update_user(
+            self,
+            user: User,
+            user_data
+    ) -> User | None:
         """
         Обновить информацию о пользователе.
         """
-        user = self.get_user_by_id(user_id)
+        updated = False
+
         if user:
-            user.name = name
-            self.db.commit()
-            self.db.refresh(user)
+            if user_data.name and user.name != user_data.name:
+                user.name = user_data.name
+                updated = True
+
+            if user_data.surname and user.surname != user_data.surname:
+                user.surname = user_data.surname
+                updated = True
+
+            if user_data.patronymic and user.patronymic != user_data.patronymic:
+                user.patronymic = user_data.patronymic
+                updated = True
+
+            if user_data.location and user.location != user_data.location:
+                user.location = user_data.location
+                updated = True
+
+            if user_data.sex and user.sex != user_data.sex:
+                user.sex = user_data.sex
+                updated = True
+
+            if user_data.birth and user.birth != user_data.birth:
+                user.birth = user_data.birth
+                updated = True
+
+            if updated:
+                self.db.commit()
+                self.db.refresh(user)
             return user
         return None
 
-    def delete_user(self, user_id: int) -> bool:
+    def delete_user(self, user: User) -> bool:
         """
         Удалить пользователя.
         """
-        user = self.get_user_by_id(user_id)
         if user:
             self.db.delete(user)
             self.db.commit()

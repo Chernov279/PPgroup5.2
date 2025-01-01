@@ -13,12 +13,12 @@ class UserCreateIn(BaseModel):
 
 
 class UserUpdateIn(BaseModel):
-    name: str
-    surname: str
-    patronymic: str
-    location: str
-    sex: str
-    birth: str
+    name: str = None
+    surname: str | None = None
+    patronymic: str | None = None
+    location: str | None = None
+    sex: str | None = None
+    birth: str | None = None
 
     class Config:
         from_attributes = True

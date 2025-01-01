@@ -1,14 +1,13 @@
 from typing import Annotated
 
 from fastapi import Depends, APIRouter, Request
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm
 
 from .token_dependencies import get_token_db_service, get_token_service
 from .token_service import TokenService
 from ..authentication.auth_schemas import AccessTokenOut
 
 token = APIRouter(tags=["token"])
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 
 @token.post("/token", response_model=AccessTokenOut, summary="logining by email and password, returns tokens")

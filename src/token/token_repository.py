@@ -2,7 +2,7 @@ from typing import Union
 
 from fastapi import HTTPException
 
-from src.config.database.db_helper import Session
+from ..config.database.db_helper import Session
 from .token_utils import verify_jwt_token, create_access_jwt_token, create_refresh_jwt_token
 
 

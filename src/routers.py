@@ -1,6 +1,6 @@
-from .authentication.auth_routers import auth
-from .token.token_routers import token
-from .user.routers import user
+from .authentication.auth_router import auth
+from .token.token_router import token
+from .user.user_router import user
 
 
 routers = [

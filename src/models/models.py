@@ -1,9 +1,7 @@
-from datetime import datetime
-
 from sqlalchemy import Column, Integer, String, ARRAY, DateTime, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from src.config.database.db_helper import Base
+from ..config.database.db_helper import Base
 
 
 class User(Base):
@@ -34,6 +32,7 @@ class User(Base):
     patronymic = Column(String)
     location = Column(String)
     sex = Column(String)
+    # TODO сделать отдельную модель для избранных роутов
     favorite_routes = Column(ARRAY(Integer), default=[])
     hashed_password = Column(String, nullable=False)
     authorized_time = Column(DateTime, default=func.now())
