@@ -33,12 +33,12 @@ class User(Base):
     location = Column(String)
     sex = Column(String)
     # TODO сделать отдельную модель для избранных роутов
-    favorite_routes = Column(ARRAY(Integer), default=[])
     hashed_password = Column(String, nullable=False)
     authorized_time = Column(DateTime, default=func.now())
     last_updated_time = Column(DateTime, default=func.now(), onupdate=func.now())
     birth = Column(String)
     routes = relationship("Route", back_populates="user")
+    estimations = relationship("Estimation", back_populates="user")
 
 
 class Route(Base):
@@ -59,14 +59,16 @@ class Route(Base):
     coordinates (relationship): Связь с координатами маршрута.
     """
     __tablename__ = 'routes'
-    route_id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True)
+    id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     distance = Column(Float)
     users_travel_time = Column(Integer)
-    avg_travel_time_on_foot = Column(Integer)
-    avg_travel_velo_time = Column(Integer)
+    users_travel_speed = Column(Integer)
+    users_transport = Column(String)
     comment = Column(String)
-    operation_time = Column(DateTime)
+    created_time = Column(DateTime, default=func.now())
+    locname_start = Column(String)
+    locname_finish = Column(String)
     user = relationship("User", back_populates="routes")
     estimations = relationship("Estimation", back_populates="route")
     coordinates = relationship("Coordinate", back_populates="routes")
@@ -89,11 +91,10 @@ class Coordinate(Base):
     """
     __tablename__ = 'coordinates'
     cord_id = Column(Integer, nullable=False, primary_key=True, autoincrement=True)
-    route_id = Column(Integer, ForeignKey('routes.route_id'), nullable=False)
+    route_id = Column(Integer, ForeignKey('routes.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    locname = Column(String)
     routes = relationship("Route", back_populates="coordinates")
 
 
@@ -113,10 +114,10 @@ class Estimation(Base):
     """
     __tablename__ = 'estimations'
     estimation_id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
-    route_id = Column(Integer, ForeignKey('routes.route_id'), nullable=False)
+    route_id = Column(Integer, ForeignKey('routes.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    estimation_value = Column(Integer, nullable=False)
-    estimator_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    value = Column(Integer, nullable=False)
     datetime = Column(DateTime, nullable=False)
     comment = Column(String)
     route = relationship("Route", back_populates="estimations")
+    user = relationship("User", back_populates="estimations")
