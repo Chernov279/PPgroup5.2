@@ -6,7 +6,7 @@ from ..config.database.db_helper import Session
 from ..models.models import User
 from ..repositories.uow.user_token import UserTokenUOW
 from .user_schemas import UserCreateIn, UserUpdateIn
-from .user_repositories import UserRepository
+from .user_repository import UserRepository
 
 
 class UserService:

@@ -1,6 +1,6 @@
 from ...config.database.db_helper import Session
 from ...token.token_repository import TokenRepository
-from ...user.user_repositories import UserRepository
+from ...user.user_repository import UserRepository
 
 
 class UserTokenUOW:

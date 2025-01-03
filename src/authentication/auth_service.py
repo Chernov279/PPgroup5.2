@@ -7,8 +7,7 @@ from .utils.auth_utils import is_valid_email
 from .utils.security import hash_password, verify_password
 from ..repositories.uow.auth_token import AuthTokenUOW
 # TODO убрать импорт UserRepository из сервиса
-from ..user.user_repositories import UserRepository
-
+from ..user.user_repository import UserRepository
 
 
 class UserAuthService:

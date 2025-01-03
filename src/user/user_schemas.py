@@ -25,6 +25,7 @@ class UserUpdateIn(BaseModel):
 
 
 class UserOut(BaseModel):
+    id: int
     name: str
     surname: str | None
     location: str | None
