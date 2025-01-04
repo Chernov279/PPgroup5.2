@@ -1,10 +1,11 @@
-from sqlalchemy import Column, Integer, String, ARRAY, DateTime, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from ..config.database.db_helper import Base
+
+from .base_model import BaseModel
 
 
-class User(Base):
+class User(BaseModel):
     """
     Модель пользователя в базе данных.
 
@@ -41,7 +42,7 @@ class User(Base):
     estimations = relationship("Estimation", back_populates="user")
 
 
-class Route(Base):
+class Route(BaseModel):
     """
     Модель маршрута.
 
@@ -74,7 +75,7 @@ class Route(Base):
     coordinates = relationship("Coordinate", back_populates="routes")
 
 
-class Coordinate(Base):
+class Coordinate(BaseModel):
     """
     Модель координаты.
 
@@ -98,7 +99,7 @@ class Coordinate(Base):
     routes = relationship("Route", back_populates="coordinates")
 
 
-class Estimation(Base):
+class Estimation(BaseModel):
     """
     Модель оценки маршрута.
 
