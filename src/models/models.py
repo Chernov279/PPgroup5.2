@@ -39,7 +39,7 @@ class User(BaseModel):
     last_updated_time = Column(DateTime, default=func.now(), onupdate=func.now())
     birth = Column(String)
     routes = relationship("Route", back_populates="user")
-    estimations = relationship("Estimation", back_populates="user")
+    ratings = relationship("Rating", back_populates="user")
 
 
 class Route(BaseModel):
@@ -71,7 +71,7 @@ class Route(BaseModel):
     locname_start = Column(String)
     locname_finish = Column(String)
     user = relationship("User", back_populates="routes")
-    estimations = relationship("Estimation", back_populates="route")
+    ratings = relationship("Rating", back_populates="route")
     coordinates = relationship("Coordinate", back_populates="routes")
 
 
@@ -99,7 +99,7 @@ class Coordinate(BaseModel):
     routes = relationship("Route", back_populates="coordinates")
 
 
-class Estimation(BaseModel):
+class Rating(BaseModel):
     # """
     # Модель оценки маршрута.
     #
@@ -113,12 +113,12 @@ class Estimation(BaseModel):
     # comment (str): Комментарий к оценке.
     # route (relationship): Связь с маршрутом.
     # """
-    __tablename__ = 'estimations'
-    estimation_id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    __tablename__ = 'ratings'
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     route_id = Column(Integer, ForeignKey('routes.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     value = Column(Integer, nullable=False)
     datetime = Column(DateTime, nullable=False)
     comment = Column(String)
-    route = relationship("Route", back_populates="estimations")
-    user = relationship("User", back_populates="estimations")
+    route = relationship("Route", back_populates="ratings")
+    user = relationship("User", back_populates="ratings")
