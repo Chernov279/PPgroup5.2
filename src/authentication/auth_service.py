@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from .auth_schemas import UserAuthIn, UserLoginIn
 from .utils.auth_utils import is_valid_email
 from .utils.security import hash_password, verify_password
-from ..repositories.uow.auth_token import AuthTokenUOW
+from src.unit_of_work.auth_token import AuthTokenUOW
 # TODO убрать импорт UserRepository из сервиса
 from ..user.user_repository import UserRepository
 
@@ -21,10 +21,10 @@ class UserAuthService:
 
     ###Инициализация сервиса аутентификации.
 
-    - `db` (Session): Экземпляр SQLAlchemy-сессии для взаимодействия с базой данных.
+    - `db_session` (Session): Экземпляр SQLAlchemy-сессии для взаимодействия с базой данных.
 
-    Если передана сессия `db`, инициализируются репозитории с этой сессией.
-    Если `db` не передана, используются репозитории с дефолтными параметрами.
+    Если передана сессия `db_session`, инициализируются репозитории с этой сессией.
+    Если `db_session` не передана, используются репозитории с дефолтными параметрами.
     Такая логика использована для того, чтобы не инициализировать репозиторий с сессией даже в том случае, когда логика
      выполняется и без обращения к БД
     """

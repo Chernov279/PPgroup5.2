@@ -1,9 +1,7 @@
-from fastapi.responses import JSONResponse
-
 from ..config.database.db_helper import Session
 from ..exceptions.route_exceptions import RouteNotFoundException, RouteFailedActionException
 from ..exceptions.user_exceptions import UserHasNotPermission
-from ..repositories.uow.route_uow import RouteUOW
+from src.unit_of_work.route_uow import RouteUOW
 from .route_schemas import RouteCreateIn, RouteUpdateIn, RouteDetailOut
 from .route_repository import RouteRepository
 

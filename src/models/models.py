@@ -118,7 +118,7 @@ class Rating(BaseModel):
     route_id = Column(Integer, ForeignKey('routes.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     value = Column(Integer, nullable=False)
-    datetime = Column(DateTime, nullable=False)
+    created_time = Column(DateTime, default=func.now())
     comment = Column(String)
     route = relationship("Route", back_populates="ratings")
     user = relationship("User", back_populates="ratings")

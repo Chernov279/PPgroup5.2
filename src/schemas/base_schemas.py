@@ -2,4 +2,5 @@ from pydantic import BaseModel
 
 
 class BaseSchema(BaseModel):
-    pass
+    class Config:
+        from_attributes: True

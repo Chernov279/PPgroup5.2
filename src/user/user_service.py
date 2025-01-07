@@ -4,19 +4,19 @@ from fastapi import HTTPException
 
 from ..config.database.db_helper import Session
 from ..models.models import User
-from ..repositories.uow.user_token import UserTokenUOW
 from .user_schemas import UserCreateIn, UserUpdateIn
 from .user_repository import UserRepository
+from ..unit_of_work.user_uow import UserUOW
 
 
 class UserService:
     def __init__(self, db: Session = None):
         if db:
             self.user_repo = UserRepository(db)
-            self.user_token_uwo = UserTokenUOW(db)
+            self.user_token_uwo = UserUOW(db)
         else:
             self.user_repo = UserRepository()
-            self.user_token_uwo = UserTokenUOW()
+            self.user_token_uwo = UserUOW()
 
     def get_user_or_404_service(self, user_id: int) -> User:
         user = self.user_repo.get_user_by_id(user_id)

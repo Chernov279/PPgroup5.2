@@ -1,9 +1,10 @@
 from typing import Tuple
 
-from ...config.database.db_helper import Session
-from ...models.models import Route
-from ...token.token_repository import TokenRepository
-from ...user.user_repository import UserRepository
+from src.config.database.db_helper import Session
+from src.models.models import Route
+from src.route.route_repository import RouteRepository
+from src.token.token_repository import TokenRepository
+from src.user.user_repository import UserRepository
 
 
 class RouteUOW:
@@ -28,6 +29,13 @@ class RouteUOW:
     def get_user_id_by_token_uow(self, token):
         user_id = self.token_repository.get_user_id_by_token_rep(token)
         return user_id
+
+    def is_route_exists_uow(self, route_id: int) -> bool:
+        route_repo = RouteRepository(self.db)
+        route = route_repo.get_route_by_id_repo(route_id)
+        if route:
+            return True
+        return False
 
     @staticmethod
     def get_avg_estimation_by_route_uow(route: Route) -> Tuple[int, float] | None:

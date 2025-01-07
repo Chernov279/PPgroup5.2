@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 
 from ..config.database.db_helper import Session
-from ..repositories.uow.auth_token import AuthTokenUOW
+from src.unit_of_work.auth_token import AuthTokenUOW
 from .token_repository import TokenRepository
 
 
@@ -21,7 +21,7 @@ class TokenService:
     ### Инициализация сервиса токенов.
 
     ### Входные параметры:
-    - `db` (Session): Экземпляр сессии для работы с базой данных. Если не передан, используется дефолтный репозиторий.
+    - `db_session` (Session): Экземпляр сессии для работы с базой данных. Если не передан, используется дефолтный репозиторий.
     """
     def __init__(
             self,

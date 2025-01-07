@@ -1,10 +1,10 @@
 from fastapi import HTTPException
 
-from ...authentication.utils.security import verify_password
-from ...config.database.db_helper import Session
-from ...config.token_config import settings_token
-from ...models.models import User
-from ...token.token_repository import TokenRepository
+from src.authentication.utils.security import verify_password
+from src.config.database.db_helper import Session
+from src.config.token_config import settings_token
+from src.models.models import User
+from src.token.token_repository import TokenRepository
 
 
 class AuthTokenUOW:
@@ -17,10 +17,10 @@ class AuthTokenUOW:
 
     ###Инициализация UoW для токенов.
 
-    - `db` (Session): Экземпляр SQLAlchemy-сессии для работы с базой данных.
+    - `db_session` (Session): Экземпляр SQLAlchemy-сессии для работы с базой данных.
 
-    Если передана сессия `db`, инициализируются репозитории с этой сессией.
-    Если `db` не передана, используются репозитории с дефолтными параметрами.
+    Если передана сессия `db_session`, инициализируются репозитории с этой сессией.
+    Если `db_session` не передана, используются репозитории с дефолтными параметрами.
         """
 
     def __init__(
