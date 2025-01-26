@@ -7,7 +7,7 @@ class RatingOut(BaseSchema):
     user_id: int
     value: int
     created_time: datetime.datetime
-    comment: str
+    comment: str | None
 
 
 class RatingCreateIn(BaseSchema):

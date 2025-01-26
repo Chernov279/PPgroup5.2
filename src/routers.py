@@ -1,4 +1,5 @@
 from .authentication.auth_router import auth
+from .coordinate.cord_router import coordinate
 from .rating_route.rat_router import rating
 from .route.route_router import route
 from .token.token_router import token
@@ -11,4 +12,5 @@ routers = [
     token,
     route,
     rating,
+    coordinate
 ]

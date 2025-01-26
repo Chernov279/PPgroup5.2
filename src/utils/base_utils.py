@@ -34,8 +34,9 @@ def isValidSchema(self, schema, model=None):
 
 def hasAttrOrder(model, order):
     if order is not None:
-        if not hasattr(model, order):
-            raise ValueError(f"{order} is not a valid attribute of the model.")
+        if hasattr(model, order):
+            return
+    raise ValueError(f"{order} is not a valid attribute of the model {model.__name__}.")
 
 
 def isValidFilters(model, filters: dict):

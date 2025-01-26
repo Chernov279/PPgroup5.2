@@ -1,6 +1,8 @@
 from typing import Tuple
 
-from src.config.database.db_helper import Session
+from fastapi import Depends
+
+from src.config.database.db_helper import Session, get_db
 from src.models.models import Route
 from src.route.route_repository import RouteRepository
 from src.token.token_repository import TokenRepository
@@ -29,6 +31,15 @@ class RouteUOW:
     def get_user_id_by_token_uow(self, token):
         user_id = self.token_repository.get_user_id_by_token_rep(token)
         return user_id
+
+
+    def get_user_id_by_route_id(
+            self,
+            route_id
+    ):
+        user_id = RouteRepository(self.db).get_user_id_by_route_id_repo(route_id)
+        return user_id
+
 
     def is_route_exists_uow(self, route_id: int) -> bool:
         route_repo = RouteRepository(self.db)

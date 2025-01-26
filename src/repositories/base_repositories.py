@@ -1,7 +1,8 @@
 from typing import List, Tuple, Union, Optional
+from sqlalchemy import func
 
-from src.models.base_model import BaseModel
-from src.utils.base_utils import isValidModel, hasAttrOrder, isValidSchema, isValidFilters
+from ..models.base_model import BaseModel
+from ..utils.base_utils import isValidModel, hasAttrOrder, isValidSchema, isValidFilters
 
 
 class BaseRepository:
@@ -53,6 +54,28 @@ class BaseRepository:
                 .offset(offset)
             )
             return stmt.all()
+
+    def get_max(self, model, name, **filters):
+        isValidModel(self, model)
+        hasAttrOrder(model, name)
+        with self.db_session as session:
+            query = session.query(func.max(getattr(model, name)))
+
+            for key, value in filters.items():
+                query = query.filter(getattr(model, key) == value)
+            max_value = query.scalar()
+        return max_value
+
+    def get_min(self, model, name, offset: int = 0, **filters):
+        isValidModel(self, model)
+        hasAttrOrder(model, name)
+        with self.db_session as session:
+            max_value = session.query(func.min(getattr(model, name))) \
+                .filter_by(**filters) \
+                .offset(offset) \
+                .scalar()
+
+        return max_value
 
     def create(self, model, schema, commit=True) -> BaseModel:
         isValidModel(self, model)

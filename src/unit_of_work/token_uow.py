@@ -29,7 +29,7 @@ class TokenUOW(BaseUOW):
         base_repo = BaseRepository(self.db_session)
         user = base_repo.get_single(User, id=user_id)
         if user:
-            return user_id
+            return int(user_id)
         return
 
     def get_user_by_token_uow(self, token: str) -> User | None:

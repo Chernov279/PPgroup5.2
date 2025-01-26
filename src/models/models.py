@@ -56,7 +56,7 @@ class Coordinate(BaseModel):
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, primary_key=True)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
-    order = Column(Integer)
+    order = Column(Integer, primary_key=True)
     routes = relationship("Route", back_populates="coordinates")
 
 

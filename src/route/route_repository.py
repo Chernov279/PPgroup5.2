@@ -12,6 +12,11 @@ class RouteRepository:
     ):
         self.db = db
 
+    def get_user_id_by_route_id_repo(self, route_id) -> Route:
+        route = self.db.query(Route).filter(Route.id == route_id).first()
+        if route:
+            return route.user_id
+
     def get_route_by_id_repo(self, route_id) -> Route:
         route = self.db.query(Route).filter(Route.id == route_id).first()
         return route
