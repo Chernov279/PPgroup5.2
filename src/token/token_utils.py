@@ -1,9 +1,11 @@
 from datetime import timedelta, datetime
+from typing import Optional
 
 import jwt
 from fastapi import HTTPException
 
 from ..config.token_config import settings_token
+from ..exceptions.token_exceptions import InvalidTokenUserException
 
 
 def create_access_jwt_token(
@@ -98,3 +100,13 @@ def verify_jwt_token(token: str) -> dict | None:
         raise HTTPException(status_code=401, detail="Invalid token")
     except Exception as e:
         raise HTTPException(status_code=401, detail="Token not decoded")
+
+
+def get_sub_from_token(token) -> Optional[int]:
+    payload = verify_jwt_token(token)
+    user_id = payload.get("sub", None)
+    if not user_id:
+        # Это нормальная ситуация для утилиты, так как обработка токена может завершиться ошибкой
+        raise InvalidTokenUserException()
+    return int(user_id)
+

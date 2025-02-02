@@ -1,7 +1,6 @@
 from fastapi import HTTPException
 
 from src.authentication.utils.security import verify_password
-from src.config.database.db_helper import Session
 from src.config.token_config import settings_token
 from src.models.models import User
 from src.token.token_repository import TokenRepository
@@ -25,7 +24,7 @@ class AuthTokenUOW:
 
     def __init__(
             self,
-            db: Session = None,
+            db = None,
     ):
         self.db = db
         if db:

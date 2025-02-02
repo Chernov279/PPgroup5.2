@@ -2,7 +2,6 @@ from typing import Union
 
 from fastapi import HTTPException
 
-from ..config.database.db_helper import Session
 from .token_utils import verify_jwt_token, create_access_jwt_token, create_refresh_jwt_token
 
 
@@ -19,7 +18,7 @@ class TokenRepository:
     ### Входные параметры:
     - `db_session` (Session): Экземпляр сессии для работы с базой данных. Если не передан, используется дефолтный репозиторий.
     """
-    def __init__(self, db: Session = None):
+    def __init__(self, db = None):
         self.db = db
 
     @staticmethod

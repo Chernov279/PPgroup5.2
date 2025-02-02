@@ -15,10 +15,14 @@ class ConfigDataBase(BaseSettings):
     DATABASE_PASSWORD: str = None
     DATABASE_PORT: str = "5432"
 
+    DB_ECHO_LOG: bool = True
     DATABASE_URL: Optional[str] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        if self.DATABASE_URL:
+            return
 
         missing_fields = [
             field for field in [
@@ -31,7 +35,10 @@ class ConfigDataBase(BaseSettings):
         if missing_fields:
             raise ValueError(f"Следующие параметры не переданы или пустые: {', '.join(missing_fields)}")
 
-        self.DATABASE_URL = f"postgresql://{self.DATABASE_USERNAME}:{self.DATABASE_PASSWORD}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        self.DATABASE_URL = (
+            f"postgresql+asyncpg://{self.DATABASE_USERNAME}:{self.DATABASE_PASSWORD}"
+            f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        )
 
     # получение данных из файла .env
     class Config:
@@ -41,7 +48,6 @@ class ConfigDataBase(BaseSettings):
 
 try:
     settings_db = ConfigDataBase()
-    # os.environ["DATABASE_URL"] = settings.database_url
 except ValidationError as e:
     print("Ошибка валидации Pydantic:", e)
 except ValueError as e:

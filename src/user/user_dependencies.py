@@ -1,19 +1,14 @@
 from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..config.database.db_helper import get_db
-from .user_service import UserService
-
-
-def get_user_service_db(db: Session = Depends(get_db)) -> UserService:
-    """
-    Фабричная функция для создания UserService с передачей сессии БД.
-    """
-    return UserService(db)
+from src.config import db_helper
+from .user_repository import UserRepository
+from .user_uow import UserUnitOfWork
 
 
-def get_user_service() -> UserService:
-    """
-    Фабричная функция для создания UserService без передачи сессии БД.
-    """
-    return UserService()
+def get_user_repository(db_session: AsyncSession = Depends(db_helper.get_db_session)):
+    return UserRepository(db_session)
+
+
+def get_user_uow(db_session: AsyncSession = Depends(db_helper.get_db_session)):
+    return UserUnitOfWork(db_session)

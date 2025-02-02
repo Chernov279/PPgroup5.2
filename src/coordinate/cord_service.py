@@ -64,7 +64,6 @@ class CoordinateService:
 
         if start_from_end:
             latest_order = cord_repo.get_latest_order(route_id)
-            print(latest_order)
             if latest_order is None:
                 latest_order = 0
             else:
@@ -93,8 +92,6 @@ class CoordinateService:
             )
                 for order in range(len(cords))
             ]
-        for cord in cords_db:
-            print(cord)
         cord_repo.add_cords(
             cords_db
         )

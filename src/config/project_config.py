@@ -37,7 +37,7 @@ class Settings(BaseSettings):
 
 
 try:
-    settings = Settings()
+    settings_project = Settings()
 except ValidationError as e:
     print("Ошибка валидации Pydantic:", e)
 except ValueError as e:

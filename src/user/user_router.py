@@ -2,57 +2,50 @@ from typing import List, Annotated
 
 from fastapi import Depends, APIRouter
 
-from ..config.token_config import oauth2_scheme
-from .user_dependencies import get_user_service_db
 from .user_service import UserService
-from .user_schemas import UserOut, UserCreateIn, UserUpdateIn
+from .user_schemas import UserDetailOut, UserShortOut
+from ..models.models import User
 
-user = APIRouter(prefix="/users", tags=["/users"])
+user = APIRouter(prefix="/users", tags=["User"])
 
 
-@user.get("/", response_model=List[UserOut])
-def get_all_users_route(
-        user_service: UserService = Depends(get_user_service_db)
+@user.get("/", response_model=List[UserShortOut])
+async def get_all_users_route(
+        users: Annotated[List[UserShortOut], Depends(UserService().get_all_users_service)]
 ):
-    return user_service.get_users_service()
+    return users
 
 
-@user.get("/me", response_model=UserOut)
-def get_user_me_route(
-        token: Annotated[str, Depends(oauth2_scheme)],
-        user_service: UserService = Depends(get_user_service_db)
+@user.get("/me", response_model=UserDetailOut)
+async def get_user_me_route(
+        user_out: Annotated[UserDetailOut, Depends(UserService().get_user_me_service)]
 ):
-    return user_service.get_user_me_service(token)
+    return user_out
 
 
-@user.post("/create", response_model=UserOut)
-def create_user_route(
-        user_data: UserCreateIn,
-        user_service: UserService = Depends(get_user_service_db)
+@user.get("/{user_id}", response_model=UserDetailOut)
+async def get_user_route(
+        user_out: Annotated[User, Depends(UserService().get_user_by_id_service)]
 ):
-    return user_service.create_user_service(user_data)
+    return user_out
 
 
-@user.get("/{user_id}", response_model=UserOut)
-def get_user_route(
-        user_id: int,
-        user_service: UserService = Depends(get_user_service_db)
+@user.post("/", response_model=UserDetailOut)
+async def create_user_route(
+        user_out: Annotated[UserDetailOut, Depends(UserService().create_user_service)]
 ):
-    return user_service.get_user_or_404_service(user_id)
+    return user_out
 
 
-@user.put("/{user_id}", response_model=UserOut)
-def update_user_route(
-        user_data: UserUpdateIn,
-        token: Annotated[str, Depends(oauth2_scheme)],
-        user_service: UserService = Depends(get_user_service_db),
+@user.put("/", response_model=UserDetailOut)
+async def update_user_route(
+        user_out: Annotated[UserDetailOut, Depends(UserService().update_user_service)]
 ):
-    return user_service.update_user_service(user_data, token)
+    return user_out
 
 
-@user.delete("/{user_id}")
-def delete_user_route(
-        token: Annotated[str, Depends(oauth2_scheme)],
-        user_service: UserService = Depends(get_user_service_db)):
-    return user_service.delete_user_service(token)
-
+@user.delete("/")
+async def delete_user_route(
+        user_out: Annotated[UserDetailOut, Depends(UserService().delete_user_service)]
+):
+    return user_out

@@ -1,82 +1,92 @@
-from typing import List
+from typing import Annotated
 
-from fastapi import HTTPException
+from fastapi import Depends
 
-from ..config.database.db_helper import Session
-from ..models.models import User
-from .user_schemas import UserCreateIn, UserUpdateIn
+from .user_dependencies import get_user_repository, get_user_uow
 from .user_repository import UserRepository
-from ..unit_of_work.user_uow import UserUOW
+from .user_uow import UserUnitOfWork
+from .user_schemas import UserCreateIn, UserUpdateIn, UserUpdateInternal, UserDetailOut, UserShortOut
 
+from ..config.token_config import oauth2_scheme
+from ..exceptions.user_exceptions import UserNotFoundException, UserFailedActionException, UserDeletedSuccessException
+from ..models.models import User
+from ..token.token_utils import get_sub_from_token
+from ..utils.schema_utils import add_internal_params, get_selected_columns
+
+
+#TODO is_active -> все проходит через uow, BaseService
 
 class UserService:
-    def __init__(self, db: Session = None):
-        if db:
-            self.user_repo = UserRepository(db)
-            self.user_token_uwo = UserUOW(db)
-        else:
-            self.user_repo = UserRepository()
-            self.user_token_uwo = UserUOW()
-
-    def get_user_or_404_service(self, user_id: int) -> User:
-        user = self.user_repo.get_user_by_id(user_id)
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        return user
-
-    def get_users_service(self) -> List[User]:
-        user = self.user_repo.get_users()
-        return user
-
-    def create_user_service(self, user_data: UserCreateIn) -> User | None:
-        """
-        Создать нового пользователя.
-        """
-        try:
-            return self.user_repo.create_user(user_data.name, user_data.email, user_data.hashed_password)
-        except HTTPException as e:
-            raise e
-        except Exception as e:
-            raise HTTPException(status_code=500, detail="User not created")
-
-    def get_user_me_service(self, token: str):
-        user = self.user_token_uwo.get_user_by_token_uow(token)
-        if user:
-            return user
-        return HTTPException(status_code=404, detail="User not found")
-
-    def update_user_service(
+    async def get_all_users_service(
             self,
-            user_data: UserUpdateIn,
-            token: str
-    ) -> User | None:
-        """
-        Обновить данные пользователя.
-        """
-        try:
-            user = self.user_token_uwo.get_user_by_token_uow(token)
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found")
-            updated_user = self.user_repo.update_user(user, user_data)
-            if updated_user:
-                return updated_user
-            raise HTTPException(status_code=500, detail="User not updated")
-        except HTTPException as e:
-            raise e
-        except Exception:
-            raise HTTPException(status_code=500, detail="User not updated")
+            limit: int = 30,
+            offset: int = 0,
+            user_repo: UserRepository = Depends(get_user_repository)
+    ):
+        selected_columns = get_selected_columns(UserShortOut, User)
+        users = await user_repo.get_all_users(limit, offset, selected_columns)
+        return users
 
-    def delete_user_service(self, token: str) -> HTTPException:
-        """
-        Удалить пользователя.
-        """
-        try:
-            user = self.user_token_uwo.get_user_by_token_uow(token)
-            success = self.user_repo.delete_user(user)
-            if not success:
-                raise HTTPException(status_code=404, detail="User not found")
-            return HTTPException(status_code=200, detail="User successfully deleted")
-        except HTTPException as e:
-            raise e
-        except Exception as e:
-            raise HTTPException(status_code=500, detail="User not deleted")
+    async def get_user_by_id_service(
+            self,
+            user_id: int,
+            user_repo: UserRepository = Depends(get_user_repository)
+    ):
+        selected_columns = get_selected_columns(UserDetailOut, User)
+        user = await user_repo.get_user_by_id(user_id, selected_columns)
+        print(user)
+        if not user:
+            raise UserNotFoundException(user_id)
+        return user
+
+    async def get_user_me_service(
+            self,
+            token: Annotated[str, Depends(oauth2_scheme)],
+            user_repo: UserRepository = Depends(get_user_repository)
+    ):
+        user_id = get_sub_from_token(token)
+        selected_columns = get_selected_columns(UserDetailOut, User)
+        user = await user_repo.get_user_by_id(user_id, selected_columns)
+        if not user:
+            raise UserNotFoundException(user_id)
+        return user
+
+    async def create_user_service(
+            self,
+            user_in: UserCreateIn,
+            user_uow: UserUnitOfWork = Depends(get_user_uow)
+    ):
+
+        async with user_uow as uow:
+            user = await uow.create_user_uow(user_in)
+            if not user:
+                raise UserFailedActionException("create user")
+            return user
+
+    async def update_user_service(
+            self,
+            user_in: UserUpdateIn,
+            token: Annotated[str, Depends(oauth2_scheme)],
+            user_uow: UserUnitOfWork = Depends(get_user_uow)
+    ):
+        user_id = get_sub_from_token(token)
+        user_internal = add_internal_params(user_in, UserUpdateInternal, id=user_id)
+
+        async with user_uow as uow:
+            user = await uow.update_user_uow(user_internal)
+            if not user:
+                raise UserFailedActionException("update user")
+            return user
+
+    async def delete_user_service(
+            self,
+            token: Annotated[str, Depends(oauth2_scheme)],
+            user_uow: UserUnitOfWork = Depends(get_user_uow)
+    ):
+        user_id = get_sub_from_token(token)
+
+        async with user_uow as uow:
+            is_deleted = await uow.delete_user_uow(user_id)
+            if is_deleted:
+                raise UserDeletedSuccessException(user_id)
+            raise UserFailedActionException("delete user")

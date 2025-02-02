@@ -1,18 +1,44 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from asyncio import current_task
+from contextlib import asynccontextmanager
 
 from .db_config import settings_db
 
-Base = declarative_base()
-engine = create_engine(settings_db.DATABASE_URL)
-Session = sessionmaker(engine)
-session = Session()
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    create_async_engine,
+    async_sessionmaker,
+    async_scoped_session
+)
 
 
-# Функция для получения сессии базы данных, которая автоматически закрывает сессию после использования
-def get_db():
-    db = Session()
-    try:
-        yield db
-    finally:
-        db.close()
+class DatabaseHelper:
+    def __init__(self, url: str, echo: bool):
+        self.engine = create_async_engine(url=url, echo=echo)
+
+        self.session_factory = async_sessionmaker(
+            bind=self.engine,
+            autoflush=False,
+            autocommit=False,
+            expire_on_commit=False
+        )
+
+    def get_scope_session(self):
+        return async_scoped_session(
+            session_factory=self.session_factory,
+            scopefunc=current_task
+        )
+
+    @asynccontextmanager
+    async def get_db_session(self):
+        from sqlalchemy import exc
+        session: AsyncSession = self.session_factory()
+        try:
+            yield session
+        except exc.SQLAlchemyError as e:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
+db_helper = DatabaseHelper(settings_db.DATABASE_URL, settings_db.DB_ECHO_LOG)
