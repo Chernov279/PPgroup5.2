@@ -34,7 +34,6 @@ class UserService:
     ):
         selected_columns = get_selected_columns(UserDetailOut, User)
         user = await user_repo.get_user_by_id(user_id, selected_columns)
-        print(user)
         if not user:
             raise UserNotFoundException(user_id)
         return user

@@ -2,6 +2,7 @@ from typing import List, Tuple, Union, Optional, Any
 from sqlalchemy import func, select, delete
 
 from .base_repository import AbstractRepository
+from ..exceptions.base_exceptions import AppException
 from ..models.base_model import BaseModel
 from ..utils.base_utils import isValidModel, hasAttrOrder, isValidSchema, isValidFilters
 
@@ -12,13 +13,16 @@ class SQLAlchemyRepository(AbstractRepository):
         isValidModel(self, model)
         self.model = model
 
-    async def get_single(self, selected_columns: Optional[List[Any]] = None, **filters):
+    async def get_single(self, selected_columns: Optional[List[Any]] = None, scalar: bool = False, **filters):
         async with (self.db_session as session):
+            isValidFilters(self.model, filters)
             row = (
                 await session.execute(select(*selected_columns).select_from(self.model).filter_by(**filters))
                 if selected_columns else
                 await session.execute(select(self.model).filter_by(**filters))
                    )
+            if scalar:
+                return row.scalar()
             return row.first()
 
     async def get_multi(

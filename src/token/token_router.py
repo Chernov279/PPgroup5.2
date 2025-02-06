@@ -1,9 +1,7 @@
 from typing import Annotated
 
-from fastapi import Depends, APIRouter, Request
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import Depends, APIRouter
 
-from .token_dependencies import get_token_db_service, get_token_service
 from .token_service import TokenService
 from ..authentication.auth_schemas import AccessTokenOut
 
@@ -11,9 +9,8 @@ token = APIRouter(tags=["token"])
 
 
 @token.post("/token", response_model=AccessTokenOut, summary="logining by email and password, returns tokens")
-def login_by_token_route(
-        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-        token_service: TokenService = Depends(get_token_db_service),
+async def login_by_password_route(
+        token_out: Annotated[AccessTokenOut, Depends(TokenService().login_by_password_service)],
 ):
     """
     Авторизация пользователя с использованием email и пароля. Возвращает access и refresh токены.
@@ -34,13 +31,12 @@ def login_by_token_route(
       - `access_token` (str): Сгенерированный access токен.
       - `token_type` (str): Тип токена, обычно "bearer".
     """
-    return token_service.login_user_service(form_data)
+    return token_out
 
 
 @token.post("/get_token", response_model=AccessTokenOut, summary="get access token by refresh token")
-def get_access_token_route(
-        request: Request,
-        token_service: TokenService = Depends(get_token_service),
+async def get_access_token_route(
+        token_out: Annotated[AccessTokenOut, Depends(TokenService().get_access_token_service)],
 ):
     """
     Получение нового access токена по refresh токену, который передается через cookie.
@@ -58,4 +54,6 @@ def get_access_token_route(
       - `access_token` (str): Новый access токен.
       - `token_type` (str): Тип токена, обычно "bearer".
     """
-    return token_service.get_access_token_service(request)
+    return token_out
+
+#TODO"выйти со всех устройств", типа чтобы все токены резко стали нерабочими. Ты мне предлагал черные списки и тд. Что если записывать к каждому токену дату его создания. Тогда можно при нажатии выйти со всех устройств добавить в бд время нажатия на выход и рефреш токены которые были созданы до этого времени сделать нерабочими. Как тебе выход?
