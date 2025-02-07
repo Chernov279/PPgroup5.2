@@ -23,6 +23,8 @@ class UserService:
             offset: int = 0,
             user_repo: UserRepository = Depends(get_user_repository)
     ):
+        limit = max(1, min(50, limit))
+        offset = max(1, offset)#int32
         selected_columns = get_selected_columns(UserShortOut, User)
         users = await user_repo.get_all_users(limit, offset, selected_columns)
         return users
@@ -55,12 +57,10 @@ class UserService:
             user_in: UserCreateIn,
             user_uow: UserUnitOfWork = Depends(get_user_uow)
     ):
-
-        async with user_uow as uow:
-            user = await uow.create_user_uow(user_in)
-            if not user:
-                raise UserFailedActionException("create user")
-            return user
+        user = await user_uow.create_user_uow(user_in)
+        if not user:
+            raise UserFailedActionException("create user")
+        return user
 
     async def update_user_service(
             self,

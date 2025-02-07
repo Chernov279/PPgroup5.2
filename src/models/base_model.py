@@ -16,7 +16,8 @@ class BaseModel(DeclarativeBase):
     # )
     @classmethod
     def get_pk_columns(cls) -> List[Any]:
-        return [col.name for col in cls.__table__.primary_key]
+        pk_column_names = [col.name for col in cls.__table__.primary_key]
+        return [getattr(cls, column_name) for column_name in pk_column_names]
 
     @classmethod
     def get_column_by_name(cls, column_name) -> Any:

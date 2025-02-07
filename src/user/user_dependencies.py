@@ -10,5 +10,6 @@ def get_user_repository(db_session: AsyncSession = Depends(db_helper.get_db_sess
     return UserRepository(db_session)
 
 
-def get_user_uow(db_session: AsyncSession = Depends(db_helper.get_db_session)):
-    return UserUnitOfWork(db_session)
+async def get_user_uow():
+    async with db_helper.get_db_session() as db_session:
+        yield UserUnitOfWork(db_session)

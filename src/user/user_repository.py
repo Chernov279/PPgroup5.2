@@ -21,6 +21,17 @@ class UserRepository(SQLAlchemyRepository):
     async def get_all_users(self, limit, offset, selected_columns):
         return await self.get_multi(limit=limit, offset=offset, selected_columns=selected_columns)
 
+    async def get_user_id_by_data(self, email):
+        return await self.get_single(
+            email=email,
+        )
+
+    async def get_user_id_password_by_login(self, selected_columns, email):
+        return await self.get_single(
+            selected_columns=selected_columns,
+            email=email,
+        )
+
     async def create_user(self, user_in):
         return await self.create(
             user_in

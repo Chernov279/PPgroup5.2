@@ -1,19 +1,23 @@
+from sqlalchemy.ext.asyncio import async_sessionmaker
+
 from .base_uow import BaseUnitOfWork
 
 
 class SqlAlchemyUnitOfWork(BaseUnitOfWork):
-
-    def __init__(self, session_factory):
-        self.session_factory = session_factory
+    def __init__(self, session_or_factory):
+        self.session_or_factory = session_or_factory
+        self.session = None
 
     async def __aenter__(self):
-        async with self.session_factory() as session:
-            self.session = session
-            return self
+        if isinstance(self.session_or_factory, async_sessionmaker):
+            self.session = self.session_or_factory()
+        else:
+            self.session = self.session_or_factory
+        return self
 
-    async def __aexit__(self, *args):
-        await self.session.rollback()
-        await self.session.close()
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if isinstance(self.session_or_factory, async_sessionmaker):
+            await self.session.close()
 
     async def commit(self):
         await self.session.commit()
