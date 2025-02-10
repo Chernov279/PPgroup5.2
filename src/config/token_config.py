@@ -3,7 +3,6 @@ from pydantic import ValidationError
 from pydantic_settings import BaseSettings
 from pathlib import Path
 
-
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
 
 

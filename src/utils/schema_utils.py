@@ -22,6 +22,12 @@ def add_internal_params(model: BaseModel, cls_internal: type(BaseSchema), **para
     return new_model
 
 
+def delete_none_params(schema):
+    for key in list(schema.__dict__.keys()):
+        if getattr(schema, key) is None:
+            delattr(schema, key)
+
+
 def get_selected_columns(schema: type[BaseSchema], cls_model: type[BaseModel]):
     """Возвращает только нужные колонки из ORM-модели, основываясь на Pydantic-модели"""
     selected_items = schema.model_fields

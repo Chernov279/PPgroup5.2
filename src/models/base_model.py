@@ -14,14 +14,15 @@ class BaseModel(DeclarativeBase):
     #     default=func.now(),
     #     onupdate=func.now()
     # )
-    @classmethod
-    def get_pk_columns(cls) -> List[Any]:
-        pk_column_names = [col.name for col in cls.__table__.primary_key]
-        return [getattr(cls, column_name) for column_name in pk_column_names]
 
     @classmethod
-    def get_column_by_name(cls, column_name) -> Any:
-        return getattr(cls, column_name)
+    def get_pk_columns_names(cls):
+        return [key.name for key in cls.__mapper__.primary_key]
+
+    @classmethod
+    def get_pk_columns(cls) -> List[Any]:
+        pk_column_names = [col.name for col in cls.__mapper__.primary_key]
+        return [getattr(cls, column_name) for column_name in pk_column_names]
 
     @classmethod
     def get_columns_by_names(cls, *column_names) -> Any:

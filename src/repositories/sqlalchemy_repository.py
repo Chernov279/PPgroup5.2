@@ -1,12 +1,13 @@
-from typing import List, Tuple, Union, Optional, Any
+from typing import List, Optional, Any
 from sqlalchemy import func, select, delete
 
 from .base_repository import AbstractRepository
-from ..exceptions.base_exceptions import AppException
+from ..exceptions.user_exceptions import UserNotFoundException
 from ..models.base_model import BaseModel
 from ..utils.base_utils import isValidModel, hasAttrOrder, isValidSchema, isValidFilters
 
-#TODO add method get_by_pk
+
+# TODO add method get_by_pk
 class SQLAlchemyRepository(AbstractRepository):
     def __init__(self, db_session, model: type(BaseModel)):
         self.db_session = db_session
@@ -20,16 +21,17 @@ class SQLAlchemyRepository(AbstractRepository):
             scalar: bool = False,
             **filters
     ):
-        async with (self.db_session as session):
-            isValidFilters(self.model, filters)
-            row = (
-                await session.execute(select(*selected_columns).select_from(self.model).filter_by(**filters).limit(limit))
-                if selected_columns else
-                await session.execute(select(self.model).filter_by(**filters).limit(limit))
-                   )
-            if scalar:
-                return row.scalar()
-            return row.first()
+
+        isValidFilters(self.model, filters)
+        row = (
+            await self.db_session.execute(
+                select(*selected_columns).select_from(self.model).filter_by(**filters).limit(limit))
+            if selected_columns else
+            await self.db_session.execute(select(self.model).filter_by(**filters).limit(limit))
+        )
+        if scalar:
+            return row.scalar()
+        return row.first()
 
     async def get_multi(
             self,
@@ -40,17 +42,16 @@ class SQLAlchemyRepository(AbstractRepository):
     ):
         hasAttrOrder(self.model, order)
 
-        async with self.db_session as session:
-            stmt_select = (
-                select(*selected_columns).select_from(self.model) if selected_columns else select(self.model))
-            stmt = (
-                stmt_select
-                .order_by(getattr(self.model, order))
-                .limit(limit)
-                .offset(offset)
-            )
-            result = await session.execute(stmt)
-            return result.all()
+        stmt_select = (
+            select(*selected_columns).select_from(self.model) if selected_columns else select(self.model))
+        stmt = (
+            stmt_select
+            .order_by(getattr(self.model, order))
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self.db_session.execute(stmt)
+        return result.all()
 
     async def get_multi_with_filters(
             self,
@@ -64,17 +65,16 @@ class SQLAlchemyRepository(AbstractRepository):
         hasAttrOrder(self.model, order)
         isValidFilters(self.model, filters)
 
-        async with self.db_session as session:
-            stmt_select = (select(*selected_columns).select_from(self.model if selected_columns else select(self.model)))
-            stmt = (
-                stmt_select
-                .filter_by(**filters)
-                .order_by(getattr(self.model, order))
-                .limit(limit)
-                .offset(offset)
-            )
-            result = session.execute(stmt)
-            return result.all()
+        stmt_select = (select(*selected_columns).select_from(self.model if selected_columns else select(self.model)))
+        stmt = (
+            stmt_select
+            .filter_by(**filters)
+            .order_by(getattr(self.model, order))
+            .limit(limit)
+            .offset(offset)
+        )
+        result = self.db_session.execute(stmt)
+        return result.all()
 
     async def get_max(
             self,
@@ -86,17 +86,16 @@ class SQLAlchemyRepository(AbstractRepository):
 
         hasAttrOrder(self.model, column_name)
 
-        async with self.db_session as session:
-            subquery = select(
-                (func.max(getattr(self.model, column_name))).scalar_subquery()
-            )
-            stmt_select = (select(*selected_columns).select_from(self.model if selected_columns else select(self.model)))
-            stmt = stmt_select.where(getattr(self.model, column_name) == subquery)
-            for key, value in filters.items():
-                stmt = stmt.where(getattr(self.model, key) == value)
-            stmt = stmt.limit(limit)
-            result = await session.execute(stmt)
-            return result.first()
+        subquery = select(
+            (func.max(getattr(self.model, column_name))).scalar_subquery()
+        )
+        stmt_select = (select(*selected_columns).select_from(self.model if selected_columns else select(self.model)))
+        stmt = stmt_select.where(getattr(self.model, column_name) == subquery)
+        for key, value in filters.items():
+            stmt = stmt.where(getattr(self.model, key) == value)
+        stmt = stmt.limit(limit)
+        result = await self.db_session.execute(stmt)
+        return result.first()
 
     async def get_min(
             self,
@@ -106,30 +105,33 @@ class SQLAlchemyRepository(AbstractRepository):
             **filters
     ):
         hasAttrOrder(self.model, column_name)
-        async with self.db_session as session:
-            subquery = select(
-                (func.min(getattr(self.model, column_name))).scalar_subquery()
-            )
-            stmt_select = (select(*selected_columns).select_from(self.model if selected_columns else select(self.model)))
-            stmt = stmt_select.where(getattr(self.model, column_name) == subquery)
-            for key, value in filters.items():
-                stmt = stmt.where(getattr(self.model, key) == value)
-            stmt = stmt.limit(limit)
-            result = await session.execute(stmt)
-            return result.first()
 
-    async def create(self, schema, flush: bool = True) -> Optional[BaseModel]:
+        subquery = select(
+            (func.min(getattr(self.model, column_name))).scalar_subquery()
+        )
+        stmt_select = (select(*selected_columns).select_from(self.model if selected_columns else select(self.model)))
+        stmt = stmt_select.where(getattr(self.model, column_name) == subquery)
+        for key, value in filters.items():
+            stmt = stmt.where(getattr(self.model, key) == value)
+        stmt = stmt.limit(limit)
+        result = await self.db_session.execute(stmt)
+        return result.first()
+
+    async def create(
+            self,
+            schema,
+            flush: bool = True
+    ) -> Optional[BaseModel]:
         isValidSchema(self, self.model, schema)
 
         data = schema.model_dump()
 
-        async with self.db_session as session:
-            instance = self.model(**data)
-            session.add(instance)
-            if flush:
-                await session.flush()
-                await session.refresh(instance)
-                return instance
+        instance = self.model(**data)
+        self.db_session.add(instance)
+        if flush:
+            await self.db_session.flush()
+            await self.db_session.refresh(instance)
+            return instance
 
     # async def void_multi_create(self, schemas: Union[List, Tuple], checkpoint=False, commit=True) -> None:
     #
@@ -176,45 +178,68 @@ class SQLAlchemyRepository(AbstractRepository):
     async def update(
             self,
             schema,
-            selected_columns: Optional[List[Any]] = None,
-            pk_name: str = "id",
             **filters
     ) -> BaseModel:
-        isValidSchema(self, schema)
-    #     isValidFilters(self.model, filters)
-    #
-    #     data = schema.model_dump()
-    #
-    #     async with self.db_session() as session:
-    #         if pk_name in filters:
-    #             query = select(self.model).where(getattr(self.model, pk_name) == filters[pk_name])
-    #         else:
-    #             query = select(self.model).filter_by(**filters)
-    #         result = await session.execute(query)
-    #         instance = result.scalars().first()
-    #
-    #         if instance:
-    #             for key, value in data.items():
-    #                 setattr(instance, key, value)
-    #
-    #             return instance
-    #
-    async def delete(self, pk_name: str = "id", **filters) -> bool:
+        isValidSchema(self, self.model, schema)
+        isValidFilters(self.model, filters)
+
+        data = schema.model_dump()
+
+        query = select(self.model).filter_by(**filters)
+        result = await self.db_session.execute(query)
+        instance = result.scalars().first()
+
+        if instance:
+            for key, value in data.items():
+                setattr(instance, key, value)
+
+            return instance
+        else:
+            raise UserNotFoundException()
+
+    async def update_by_pk(
+            self,
+            schema,
+            pk_values: List[Any],
+
+    ) -> BaseModel:
+        isValidSchema(self, self.model, schema)
+
+        data = schema.model_dump()
+
+        pk_dict = dict(zip(self.model.get_pk_columns_names(), pk_values))
+        query = select(self.model).filter_by(
+            **pk_dict
+        )
+        result = await self.db_session.execute(query)
+        instance = result.scalars().first()
+        if instance:
+            for key, value in data.items():
+                setattr(instance, key, value)
+            return instance
+        else:
+            raise UserNotFoundException()
+
+    async def delete(
+            self,
+            **filters
+    ) -> bool:
 
         isValidFilters(self.model, filters)
-    #
-    #     async with self.db_session() as session:
-    #         if pk_name in filters:
-    #             query = delete(self.model).where(getattr(self.model, pk_name) == filters[pk_name])
-    #             await session.execute(query)
-    #             return True
-    #         else:
-    #             query = select(self.model).filter_by(**filters)
-    #             result = await session.execute(query)
-    #             instance = result.scalars().first()
-    #
-    #             if instance:
-    #                 await session.delete(instance)
-    #
-    #             return True
-    #         return False
+
+        query = delete(self.model).filter_by(**filters)
+        result = await self.db_session.execute(query)
+        if result.rowcount > 0:
+            return True
+        return False
+
+    async def delete_by_pk(
+            self,
+            pk_values: List[Any],
+    ) -> bool:
+        pk_dict = dict(zip(self.model.get_pk_columns_names(), pk_values))
+        query = delete(self.model).filter_by(**pk_dict)
+        result = await self.db_session.execute(query)
+        if result.rowcount > 0:
+            return True
+        return False

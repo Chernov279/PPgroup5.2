@@ -1,19 +1,34 @@
 from passlib.context import CryptContext
+from argon2 import PasswordHasher
 
+from src.exceptions.base_exceptions import AppException
+
+ph = PasswordHasher()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def hash_password(password: str) -> str:
+hashers = {
+    "argon2": ph.hash,
+    "bcrypt": pwd_context
+}
+
+
+def hash_password(password: str, scrypt: str = "argon2") -> str:
     """
-    Хэширование пароля с использованием bcrypt.
+    Хэширование пароля с использованием выбранного алгоритма.
     Возвращает хэшированный пароль.
     """
-    return pwd_context.hash(password)
+    hasher = hashers.get(scrypt)
+    if not hasher:
+        raise AppException(detail="Wrong type of hash scrypt")
+    return hasher.hash(password)
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
+def verify_password(plain_password: str, hashed_password: str, scrypt: str = "argon2") -> bool:
     """
     Проверка пароля с хэшированным значением.
     """
-    return pwd_context.verify(plain_password, hashed_password)
-
+    hasher = hashers.get(scrypt)
+    if not hasher:
+        raise AppException(detail="Wrong type of hash scrypt")
+    return hasher.verify(hashed_password, plain_password)

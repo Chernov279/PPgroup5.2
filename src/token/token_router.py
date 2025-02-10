@@ -10,7 +10,7 @@ token = APIRouter(tags=["token"])
 
 @token.post("/token", response_model=AccessTokenOut, summary="logining by email and password, returns tokens")
 async def login_by_password_route(
-        token_out: Annotated[AccessTokenOut, Depends(TokenService().login_by_password_service)],
+        token_out: Annotated[AccessTokenOut, Depends(TokenService.login_by_password_service)],
 ):
     """
     Авторизация пользователя с использованием email и пароля. Возвращает access и refresh токены.
@@ -36,7 +36,7 @@ async def login_by_password_route(
 
 @token.post("/get_token", response_model=AccessTokenOut, summary="get access token by refresh token")
 async def get_access_token_route(
-        token_out: Annotated[AccessTokenOut, Depends(TokenService().get_access_token_service)],
+        token_out: Annotated[AccessTokenOut, Depends(TokenService.get_access_token_service)],
 ):
     """
     Получение нового access токена по refresh токену, который передается через cookie.
@@ -56,4 +56,4 @@ async def get_access_token_route(
     """
     return token_out
 
-#TODO"выйти со всех устройств", типа чтобы все токены резко стали нерабочими. Ты мне предлагал черные списки и тд. Что если записывать к каждому токену дату его создания. Тогда можно при нажатии выйти со всех устройств добавить в бд время нажатия на выход и рефреш токены которые были созданы до этого времени сделать нерабочими. Как тебе выход?
+# TODO"выйти со всех устройств", типа чтобы все токены резко стали нерабочими. Что если записывать к каждому токену дату его создания. Тогда можно при нажатии выйти со всех устройств добавить в бд время нажатия на выход и рефреш токены которые были созданы до этого времени сделать нерабочими. Как тебе выход?

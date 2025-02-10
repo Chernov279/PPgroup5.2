@@ -1,5 +1,9 @@
-from src.repositories.sqlalchemy_uow import SqlAlchemyUnitOfWork
-from src.user.user_repository import UserRepository
+from typing import List, Optional
+
+from .user_repository import UserRepository
+
+from ..exceptions.user_exceptions import UserNotFoundException
+from ..repositories.sqlalchemy_uow import SqlAlchemyUnitOfWork
 
 
 class UserUnitOfWork(SqlAlchemyUnitOfWork):
@@ -7,6 +11,36 @@ class UserUnitOfWork(SqlAlchemyUnitOfWork):
         super().__init__(db_session)
         self.db_session = db_session
         self.repository = UserRepository(db_session)
+
+    async def get_all_users_uow(
+        self,
+        limit: int = 30,
+        offset: int = 0,
+        selected_columns: Optional[List] = None
+    ):
+        try:
+            users = await self.repository.get_all_users(
+                limit=limit,
+                offset=offset,
+                selected_columns=selected_columns,
+            )
+            return users
+        except Exception as e:
+            raise e
+
+    async def get_user_by_id_uow(
+            self,
+            user_id: int,
+            selected_columns: Optional[List] = None
+    ):
+        try:
+            user = await self.repository.get_user_by_id(
+                user_id=user_id,
+                selected_columns=selected_columns,
+            )
+            return user
+        except Exception as e:
+            raise e
 
     async def create_user_uow(self, user_in):
         try:
@@ -17,11 +51,14 @@ class UserUnitOfWork(SqlAlchemyUnitOfWork):
             await self.db_session.rollback()
             raise e
 
-    async def update_user_uow(self, user_in):
+    async def update_user_uow(self, user_in, user_id):
         try:
-            user = await self.repository.update_user(user_in)
+            user = await self.repository.update_user(user_in, user_id)
             await self.db_session.commit()
             return user
+        except UserNotFoundException:
+            await self.db_session.rollback()
+            raise UserNotFoundException(user_id)
         except Exception as e:
             await self.db_session.rollback()
             raise e
