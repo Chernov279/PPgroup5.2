@@ -25,3 +25,9 @@ class NoContentResponse:
 
     def get_response(self):
         return JSONResponse(status_code=self.status_code, content=self.content)
+
+
+class FailedActionException(AppException):
+    def __init__(self, action: str = None):
+        detail = f"Failed to {action}." if action is not None else f"Failed the action."
+        super().__init__(status_code=500, detail=detail)

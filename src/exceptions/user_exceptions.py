@@ -1,4 +1,4 @@
-from .base_exceptions import AppException
+from .base_exceptions import AppException, FailedActionException
 
 
 class UserNotFoundException(AppException):
@@ -14,13 +14,22 @@ class UserHasNotPermission(AppException):
         super().__init__(status_code=403, detail=detail)
 
 
-class UserFailedActionException(AppException):
-    def __init__(self, action: str = None):
-        detail = f"Failed to {action}." if action is not None else f"Failed the action."
-        super().__init__(status_code=400, detail=detail)
-
-
 class UserDeletedSuccessException(AppException):
     def __init__(self, user_id):
         detail = f"User with id {user_id} was deleted" if user_id else f"User deleted"
         super().__init__(status_code=204, detail=detail)
+
+
+class UserFailedCreateException(FailedActionException):
+    def __init__(self):
+        super().__init__(action="create user")
+
+
+class UserFailedUpdateException(FailedActionException):
+    def __init__(self):
+        super().__init__(action="update user data")
+
+
+class UserFailedDeleteException(FailedActionException):
+    def __init__(self):
+        super().__init__(action="delete user")

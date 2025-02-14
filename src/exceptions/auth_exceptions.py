@@ -11,3 +11,9 @@ class InvalidCredentialsException(AppException):
     def __init__(self):
         detail = f"Invalid login or password"
         super().__init__(status_code=401, detail=detail)
+
+
+class EmailAlreadyExistsException(AppException):
+    def __init__(self):
+        detail = f"User with this email already exists"
+        super().__init__(status_code=409, detail=detail)

@@ -120,7 +120,8 @@ class SQLAlchemyRepository(AbstractRepository):
     async def create(
             self,
             schema,
-            flush: bool = True
+            flush: bool = True,
+            selected_columns: Optional[List] = None
     ) -> Optional[BaseModel]:
         isValidSchema(self, self.model, schema)
 

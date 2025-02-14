@@ -1,7 +1,8 @@
 import re
-from typing import Optional, Union
 
-from src.user.user_schemas import UserCreateIn
+from fastapi.responses import JSONResponse
+
+from src.token.token_utils import create_refresh_token, create_access_token, set_refresh_token_cookie
 
 
 def is_valid_email(email: str) -> bool:
@@ -57,12 +58,35 @@ def is_strong_password(password: str) -> tuple[bool, str]:
     return True, ""
 
 
-def is_valid_create_user_data(user_in) -> tuple[bool, str]:
-    if not is_valid_email(user_in.email):
-        return False, "invalid email"
-    if not is_valid_username(user_in.name):
-        return False, "invalid username"
-    is_valid_password = is_strong_password(user_in.password)
-    if not is_valid_password[0]:
-        return is_valid_password
+def is_valid_create_user_data(
+        user_in,
+        check_email: bool = True,
+        check_name: bool = True,
+        check_password: bool = True
+) -> tuple[bool, str]:
+    if check_email:
+        if not is_valid_email(user_in.email):
+            return False, "invalid email"
+
+    if check_name:
+        if not is_valid_username(user_in.name):
+            return False, "invalid username"
+
+    if check_password:
+        is_valid_password = is_strong_password(user_in.password)
+        if not is_valid_password[0]:
+            return is_valid_password
     return True, ""
+
+
+def success_login_user(
+        user_id
+) -> JSONResponse:
+    refresh_token = create_refresh_token(user_id)
+    access_token = create_access_token(user_id)
+    response = JSONResponse(content={
+        "access_token": access_token,
+        "token_type": "bearer",
+    })
+    set_refresh_token_cookie(response, refresh_token)
+    return response

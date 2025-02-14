@@ -30,7 +30,7 @@ def set_refresh_token_cookie(response, refresh_token: str) -> None:
     )
 
 
-def delete_refresh_token_cookie_uow(response) -> None:
+def delete_refresh_token_cookie(response) -> None:
     """
     Удаляет refresh токен из cookies.
 

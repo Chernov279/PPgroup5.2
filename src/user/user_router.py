@@ -4,7 +4,6 @@ from fastapi import Depends, APIRouter
 
 from .user_service import UserService
 from .user_schemas import UserDetailOut, UserShortOut
-from ..models.models import User
 
 user = APIRouter(prefix="/users", tags=["User"])
 
@@ -25,7 +24,7 @@ async def get_user_me_route(
 
 @user.get("/{user_id}", response_model=UserDetailOut)
 async def get_user_route(
-        user_out: Annotated[User, Depends(UserService.get_user_by_id_service)]
+        user_out: Annotated[UserDetailOut, Depends(UserService.get_user_by_id_service)]
 ):
     return user_out
 

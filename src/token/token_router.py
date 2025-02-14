@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends, APIRouter
 
+from .token_schemas import AccessTokenOut
 from .token_service import TokenService
-from ..authentication.auth_schemas import AccessTokenOut
 
 token = APIRouter(tags=["token"])
 

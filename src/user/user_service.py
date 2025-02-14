@@ -4,15 +4,24 @@ from fastapi import Depends
 
 from .user_dependencies import get_user_uow
 from .user_uow import UserUnitOfWork
-from .user_schemas import UserCreateIn, UserUpdateIn, UserDetailOut, UserShortOut
+from .user_schemas import (
+    UserCreateIn,
+    UserUpdateIn,
+    UserDetailOut,
+    UserShortOut
+)
 
 from ..config.token_config import oauth2_scheme
-from ..exceptions.user_exceptions import UserNotFoundException, UserFailedActionException, UserDeletedSuccessException
+from ..exceptions.user_exceptions import (
+    UserNotFoundException,
+    UserDeletedSuccessException,
+    UserFailedUpdateException,
+    UserFailedCreateException,
+    UserFailedDeleteException
+)
 from ..token.token_utils import get_sub_from_token
 from ..utils.schema_utils import delete_none_params
 
-
-# TODO is_active -> все проходит через uow, BaseService
 
 class UserService:
     @staticmethod
@@ -64,7 +73,7 @@ class UserService:
         async with user_uow as uow:
             user = await uow.create_user_uow(user_in)
             if not user:
-                raise UserFailedActionException("create user")
+                raise UserFailedCreateException()
             return user
 
     @staticmethod
@@ -78,7 +87,7 @@ class UserService:
         async with user_uow as uow:
             user = await uow.update_user_uow(user_in, user_id)
             if not user:
-                raise UserFailedActionException("update user")
+                raise UserFailedUpdateException()
             return user
 
     @staticmethod
@@ -92,4 +101,4 @@ class UserService:
             is_deleted = await uow.delete_user_uow(user_id)
             if is_deleted:
                 raise UserDeletedSuccessException(user_id)
-            raise UserFailedActionException("delete user")
+            raise UserFailedDeleteException()

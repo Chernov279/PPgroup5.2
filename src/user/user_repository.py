@@ -31,20 +31,15 @@ class UserRepository(SQLAlchemyRepository):
             selected_columns=selected_columns
         )
 
-    async def get_user_id_by_data(self, email):
-        return await self.get_single(
-            email=email,
-        )
-
-    async def get_user_id_password_by_login(self, selected_columns, email):
-        return await self.get_single(
-            selected_columns=selected_columns,
-            email=email,
-        )
-
     async def create_user(self, user_in):
         return await self.create(
             user_in
+        )
+
+    async def register_new_user(self, user_in):
+        return await self.create(
+            schema=user_in,
+            flush=True,
         )
 
     async def update_user(self, user_in, user_id):
