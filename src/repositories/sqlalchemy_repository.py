@@ -8,6 +8,7 @@ from ..utils.base_utils import isValidModel, hasAttrOrder, isValidSchema, isVali
 
 
 # TODO add method get_by_pk
+# TODO add method get_with_join
 class SQLAlchemyRepository(AbstractRepository):
     def __init__(self, db_session, model: type(BaseModel)):
         self.db_session = db_session
@@ -73,7 +74,7 @@ class SQLAlchemyRepository(AbstractRepository):
             .limit(limit)
             .offset(offset)
         )
-        result = self.db_session.execute(stmt)
+        result = await self.db_session.execute(stmt)
         return result.all()
 
     async def get_max(
@@ -197,7 +198,7 @@ class SQLAlchemyRepository(AbstractRepository):
             return instance
         else:
             raise UserNotFoundException()
-
+    # TODO update_by_object
     async def update_by_pk(
             self,
             schema,

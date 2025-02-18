@@ -1,119 +1,155 @@
-from ..config.database.db_helper import Session
-from ..exceptions.route_exceptions import RouteNotFoundException, RouteFailedActionException
-from ..exceptions.user_exceptions import UserHasNotPermission
-from src.unit_of_work.route_uow import RouteUOW
-from .route_schemas import RouteCreateIn, RouteUpdateIn, RouteDetailOut
-from .route_repository import RouteRepository
+from typing import Annotated
+
+from fastapi import Depends
+
+from ..config.token_config import oauth2_scheme
+from ..exceptions.base_exceptions import NoContentResponse
+from ..exceptions.route_exceptions import (
+    RouteNotFoundException,
+    RouteFailedCreateException,
+    RouteFailedUpdateException,
+    RoutePermissionException,
+    RouteFailedDeleteException
+)
+from ..models.models import Route
+from ..token.token_utils import get_sub_from_token
+from ..utils.database_utils import valid_limit, valid_offset
+from ..utils.schema_utils import add_internal_params, delete_none_params
+
+from .route_schemas import (
+    RouteOut,
+    RouteCreateIn,
+    RouteCreateInternal,
+    RouteUpdateIn
+)
+from .route_dependencies import get_route_uow
+from .route_uow import RouteUnitOfWork
+from .route_utils import create_route_detail_by_model
 
 
 class RouteService:
-    def __init__(
-            self,
-            db: Session = None
+    @staticmethod
+    async def get_all_routes_service(
+            limit: int = 30,
+            offset: int = 0,
+            route_uow: RouteUnitOfWork = Depends(get_route_uow)
     ):
-        if db:
-            self.route_uow = RouteUOW(db)
-            self.route_repo = RouteRepository(db)
+        valid_limit(limit),
+        valid_offset(offset)
 
-    def get_route_by_id_service(self, route_id: int):
-        route = self.route_repo.get_route_by_id_repo(route_id)
-        if route:
-            return route
-        raise RouteNotFoundException(route_id)
-
-    def get_routes_service(self):
-        routes = self.route_repo.get_routes_repo()
+        selected_columns = RouteOut.get_selected_columns()
+        async with route_uow as uow:
+            routes = await uow.get_all_routes_uow(
+                limit=limit,
+                offset=offset,
+                selected_columns=selected_columns
+            )
         return routes
 
-    def get_route_detail_service(
-            self,
-            route_id: int,
-            token: str
+    @staticmethod
+    async def get_my_routes_service(
+            token: Annotated[str, Depends(oauth2_scheme)],
+            limit: int = 30,
+            offset: int = 0,
+            route_uow: RouteUnitOfWork = Depends(get_route_uow)
     ):
-        route = self.route_repo.get_route_by_id_repo(route_id)
+        user_id = get_sub_from_token(token)
+        valid_limit(limit),
+        valid_offset(offset)
+
+        selected_columns = RouteOut.get_selected_columns()
+        async with route_uow as uow:
+            routes = await uow.get_routes_by_user_id_uow(
+                user_id=user_id,
+                limit=limit,
+                offset=offset,
+                selected_columns=selected_columns
+            )
+        return routes
+
+    @staticmethod
+    async def get_route_detail_service(
+            route_id: int,
+            route_uow: RouteUnitOfWork = Depends(get_route_uow)
+    ):
+        selected_columns = RouteOut.get_selected_columns()
+        async with route_uow as uow:
+            route = await uow.get_route_by_id_uow(
+                route_id=route_id,
+                selected_columns=selected_columns
+            )
+            if not route:
+                raise RouteNotFoundException(route_id)
+            route_details = await uow.get_route_detail_params_uow(
+                user_id=route.user_id,
+                route_id=route_id,
+            )
+        detail_route = create_route_detail_by_model(route, route_details, raise_exception=False)
+        return detail_route
+
+    @staticmethod
+    async def get_route_by_id_service(
+            route_id: int,
+            route_uow: RouteUnitOfWork = Depends(get_route_uow)
+    ):
+        selected_columns = RouteOut.get_selected_columns()
+        async with route_uow as uow:
+            route = await uow.get_route_by_id_uow(
+                route_id=route_id,
+                selected_columns=selected_columns
+            )
         if not route:
             raise RouteNotFoundException(route_id)
-        user_name = route.user.name
+        return route
 
-        args_estimation = self.route_uow.get_avg_estimation_by_route_uow(route)
-        if args_estimation is not None:
-            amount_estimations, avg_estimation = args_estimation
-        else:
-            amount_estimations, avg_estimation = 0, None
-
-        args_coordinates = self.route_uow.get_sf_coordinates_by_route_uow(route)
-        if args_coordinates is not None:
-            amount_points, start_coordinate, finish_coordinate = args_coordinates
-        else:
-            amount_points, start_coordinate, finish_coordinate = 0, None, None
-
-        route_detail_out = RouteDetailOut(
-            id=route_id,
-            distance=route.distance,
-            users_travel_time=route.users_travel_time,
-            users_travel_speed=route.users_travel_speed,
-            users_transport=route.users_transport,
-            comment=route.comment,
-            created_time=route.created_time,
-            locname_start=route.locname_start,
-            locname_finish=route.locname_finish,
-            user_name=user_name,
-            avg_estimation=avg_estimation,
-            amount_estimations=amount_estimations,
-            start_coordinate=start_coordinate,
-            finish_coordinate=finish_coordinate,
-            amount_points=amount_points,
-        )
-        return route_detail_out
-
-    def create_route_service(
-            self,
+    @staticmethod
+    async def create_route_service(
+            token: Annotated[str, Depends(oauth2_scheme)],
             route_in: RouteCreateIn,
-            token: str
+            route_uow: RouteUnitOfWork = Depends(get_route_uow)
     ):
-        user_id = self.route_uow.get_user_id_by_token_uow(token)
-        if not user_id:
-            raise
-        return self.route_repo.create_route_repo(route_in, user_id)
+        user_id = get_sub_from_token(token)
+        route_internal = add_internal_params(route_in, RouteCreateInternal, user_id=user_id)
 
-    def get_my_routes_service(
-            self,
-            token: str
-    ):
-        routes = self.route_uow.get_routes_by_token_uow(token)
-        return routes
+        async with route_uow as uow:
+            route = await uow.create_route_uow(route_in=route_internal, flush=True)
+        if not route:
+            raise RouteFailedCreateException()
+        return route
 
-    def update_route_service(
-            self,
+    @staticmethod
+    async def update_route_service(
             route_in: RouteUpdateIn,
-            token: str
+            token: Annotated[str, Depends(oauth2_scheme)],
+            route_uow: RouteUnitOfWork = Depends(get_route_uow)
     ):
-        route_id = route_in.id
-        route = self.route_repo.get_route_by_id_repo(route_id)
-        if not route:
-            raise RouteNotFoundException(route_id)
-        user_id_route = route.user_id
-        user_id_token = self.route_uow.get_user_id_by_token_uow(token)
-        if user_id_route != user_id_token:
-            raise UserHasNotPermission(action="update route")
-        updated_route = self.route_repo.update_route_repo(route_in, route)
-        if updated_route:
-            return updated_route
-        raise RouteFailedActionException(action="update route")
+        user_id = get_sub_from_token(token)
+        delete_none_params(route_in)
+        async with route_uow as uow:
+            user_id_route = await uow.get_route_by_id_uow(route_id=route_in.id, selected_columns=[Route.user_id])
+            if user_id_route != user_id:
+                raise RoutePermissionException(action="update")
+            route = await uow.update_route_uow(route_in)
+            if not route:
+                raise RouteFailedUpdateException()
+            return route
 
-    def delete_route_service(
-            self,
+    @staticmethod
+    async def delete_route_service(
             route_id: int,
-            token: str
+            token: Annotated[str, Depends(oauth2_scheme)],
+            route_uow: RouteUnitOfWork = Depends(get_route_uow)
     ):
-        route = self.route_repo.get_route_by_id_repo(route_id)
-        if not route:
-            raise RouteNotFoundException(route_id)
-        user_id_route = route.user_id
-        user_id_token = self.route_uow.get_user_id_by_token_uow(token)
-        if user_id_route != user_id_token:
-            raise UserHasNotPermission(action="delete route")
-        success = self.route_repo.delete_route_repo(route)
-        if success:
-            return {"message": "Route successfully deleted"}
-        raise RouteFailedActionException(action="delete route")
+        user_id = get_sub_from_token(token)
+
+        async with route_uow as uow:
+            user_id_route = await uow.get_route_by_id_uow(route_id=route_id, selected_columns=[Route.user_id], scalar=True)
+            if not user_id_route:
+                raise RouteNotFoundException()
+            if user_id_route != user_id:
+                raise RoutePermissionException(action="delete")
+            is_deleted = await uow.delete_route_uow(route_id)
+            if not is_deleted:
+                raise RouteFailedDeleteException()
+
+        return NoContentResponse(status_code=204, detail={"msg": "Route was successfully deleted"}).get_response()

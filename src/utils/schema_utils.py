@@ -1,24 +1,34 @@
 from src.exceptions.base_exceptions import AppException
 from src.models.base_model import BaseModel
 from src.schemas.base_schemas import BaseSchema
-from src.utils.base_utils import isValidModel
 
 
-def add_internal_params(model: BaseModel, cls_internal: type(BaseSchema), **params):
-    isValidModel(None, model)
-
+def add_internal_params(model, cls_internal: type(BaseSchema), raise_exception: bool = True, **params):
+    import sqlalchemy.engine.row as sql_row
     new_model = cls_internal()
-    for key, value in model.__dict__.items():
-        if hasattr(new_model, key):
-            setattr(new_model, key, value)
-        else:
-            raise AppException(400, f"cls{cls_internal} has not parameter {key} from model {model.__class__}")
 
+    if isinstance(model, BaseModel):
+        new_model = cls_internal()
+        for key, value in model.__dict__.items():
+            if hasattr(new_model, key):
+                setattr(new_model, key, value)
+            elif raise_exception:
+                raise AppException(400, f"cls {cls_internal} has not parameter {key} from model {model.__class__}")
+
+    elif isinstance(model, sql_row.Row):
+        for key, value in model._asdict().items():
+            if hasattr(new_model, key):
+                setattr(new_model, key, value)
+            elif raise_exception:
+                raise AppException(400, f"cls {cls_internal} has not parameter {key}")
+    else:
+        raise AppException()
     for key, value in params.items():
         if hasattr(new_model, key):
             setattr(new_model, key, value)
-        else:
-            raise AppException(400, f"cls{cls_internal} has not parameter {key}")
+        elif raise_exception:
+            raise AppException(400, f"cls {cls_internal} has not parameter {key}")
+
     return new_model
 
 

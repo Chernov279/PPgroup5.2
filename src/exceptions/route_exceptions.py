@@ -1,4 +1,10 @@
-from .base_exceptions import AppException
+from .base_exceptions import AppException, FailedActionException, NoContentResponse
+
+
+class RouteDeletedSuccessResponse(NoContentResponse):
+    def __init__(self, route_id: int = None):
+        msg = f"Route with ID {route_id} was successfully deleted" if route_id else "Route was successfully deleted"
+        super().__init__(status_code=204, detail={"msg": msg})
 
 
 class RouteNotFoundException(AppException):
@@ -8,7 +14,22 @@ class RouteNotFoundException(AppException):
         super().__init__(status_code=404, detail=detail)
 
 
-class RouteFailedActionException(AppException):
+class RoutePermissionException(AppException):
     def __init__(self, action: str = None):
-        detail = f"Failed to {action}." if action is not None else "Failed the action."
-        super().__init__(status_code=400, detail=detail)
+        detail = f"You do not have permission to {action} this route." if action else "You do not have permission."
+        super().__init__(status_code=403, detail=detail)
+
+
+class RouteFailedCreateException(FailedActionException):
+    def __init__(self):
+        super().__init__(action="create route")
+
+
+class RouteFailedUpdateException(FailedActionException):
+    def __init__(self):
+        super().__init__(action="update route")
+
+
+class RouteFailedDeleteException(FailedActionException):
+    def __init__(self):
+        super().__init__(action="delete route")

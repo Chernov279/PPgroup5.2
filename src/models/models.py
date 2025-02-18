@@ -4,7 +4,7 @@ from sqlalchemy.sql import func
 
 from .base_model import BaseModel
 
-
+# TODO Mapper, mapping
 class User(BaseModel):
     # """
     # Модель пользователя в базе данных.

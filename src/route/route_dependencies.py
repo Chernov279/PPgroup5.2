@@ -1,10 +1,7 @@
-from fastapi import Depends
+from .route_uow import RouteUnitOfWork
+from ..config import db_helper
 
-from .route_service import RouteService
 
-
-# def get_route_service_db(db: Session = Depends(get_db)) -> RouteService:
-#     """
-#     Фабричная функция для создания UserService с передачей сессии БД.
-#     """
-#     return RouteService(db)
+async def get_route_uow():
+    async with db_helper.get_db_session() as db_session:
+        yield RouteUnitOfWork(db_session)

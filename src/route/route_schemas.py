@@ -1,55 +1,54 @@
 import datetime
 from typing import Tuple
 
-from pydantic import BaseModel
+from ..models.models import Route
+from ..schemas.base_schemas import BaseSchema
 
 
-class RouteCreateIn(BaseModel):
-    distance: float | None
-    users_travel_time: int | None
-    users_travel_speed: int | None
-    users_transport: str | None
-    comment: str | None
-    locname_start: str | None
-    locname_finish: str | None
+class RouteModel(BaseSchema):
+    @classmethod
+    def get_selected_columns(cls, cls_model=Route):
+        return super().get_selected_columns(cls_model)
 
 
-class RouteUpdateIn(BaseModel):
+class RouteCreateIn(RouteModel):
+    distance: float | None = None
+    users_travel_time: int | None = None
+    users_travel_speed: int | None = None
+    users_transport: str | None = None
+    comment: str | None = None
+    locname_start: str | None = None
+    locname_finish: str | None = None
+
+
+class RouteCreateInternal(RouteCreateIn):
+    user_id: int | None = None
+
+
+class RouteUpdateIn(RouteModel):
     id: int
-    distance: float | None
-    users_travel_time: int | None
-    users_travel_speed: int | None
-    users_transport: str | None
-    comment: str | None
-    locname_start: str | None
-    locname_finish: str | None
+    distance: float | None = None
+    users_travel_time: int | None = None
+    users_transport: str | None = None
+    comment: str | None = None
+    locname_start: str | None = None
+    locname_finish: str | None = None
 
 
-class RouteOut(BaseModel):
-    id: int
-    user_id: int
-    distance: float | None
-    users_travel_time: int | None
-    users_transport: str | None
-    comment: str | None
-    created_time: datetime.datetime | None
-    locname_start: str | None
-    locname_finish: str | None
+class RouteOut(RouteModel):
+    id: int | None = None
+    user_id: int | None = None
+    distance: float | None = None
+    users_travel_time: int | None = None
+    users_transport: str | None = None
+    comment: str | None = None
+    created_time: datetime.datetime | None = None
+    locname_start: str | None = None
+    locname_finish: str | None = None
 
 
-class RouteDetailOut(BaseModel):
-    id: int
-    distance: float | None
-    users_travel_time: int | None
-    users_travel_speed: int | None
-    users_transport: str | None
-    comment: str | None
-    created_time: datetime.datetime | None
-    locname_start: str | None
-    locname_finish: str | None
+class RouteDetailOut(RouteOut):
     user_name: str | None = None
-    avg_estimation: float | None = None
-    amount_estimations: int | None = 0
-    start_coordinate: Tuple[float, float] | None
-    finish_coordinate: Tuple[float, float] | None
-    amount_points: int | None
+    avg_rating: float | None = None
+    amount_ratings: int | None = 0
+    amount_points: int | None = 0

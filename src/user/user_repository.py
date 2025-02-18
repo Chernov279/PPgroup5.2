@@ -6,13 +6,14 @@ class UserRepository(SQLAlchemyRepository):
     def __init__(self, db_session):
         super().__init__(db_session, User)
 
-    async def get_user_by_id(self, user_id, selected_columns):
+    async def get_user_by_id(self, user_id, selected_columns, scalar=False):
         """
         Получить пользователя по ID.
         """
         return await self.get_single(
             id=user_id,
-            selected_columns=selected_columns
+            selected_columns=selected_columns,
+            scalar=scalar
         )
 
     async def get_user_by_email(self, email, selected_columns):

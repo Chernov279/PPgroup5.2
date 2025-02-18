@@ -14,14 +14,14 @@ class ValidationException(AppException):
 
 
 class NoContentResponse:
-    def __init__(self, status_code: int = 200, **content):
+    def __init__(self, status_code: int = 200, detail=None):
         self.status_code = status_code
-        if hasattr(content, "content"):
-            self.content = content
-        elif isinstance(content, dict):
-            self.content = content
+        if detail is None:
+            self.content = {}
+        elif isinstance(detail, dict) or isinstance(detail, str):
+            self.content = {"detail": detail}
         else:
-            raise ValidationException(f"NoContentResponse", f"parameter 'content' is not valid obj")
+            raise ValidationException(f"NoContentResponse", f"parameter 'detail' is not valid obj")
 
     def get_response(self):
         return JSONResponse(status_code=self.status_code, content=self.content)

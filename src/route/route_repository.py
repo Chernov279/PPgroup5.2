@@ -1,101 +1,81 @@
 from typing import List
 
-from ..config.database.db_helper import Session
-from ..models.models import Route, User
-from .route_schemas import RouteCreateIn, RouteUpdateIn
+from ..models.models import Route
+
+from ..repositories.sqlalchemy_repository import SQLAlchemyRepository
 
 
-class RouteRepository:
-    def __init__(
+class RouteRepository(SQLAlchemyRepository):
+    def __init__(self, db_session):
+        super().__init__(db_session, Route)
+
+    # async def get_user_id_by_route_id_repo(self, route_id) -> Route:
+    #     route = self.db.query(Route).filter(Route.id == route_id).first()
+    #     if route:
+    #         return route.user_id
+
+    async def get_route_by_id(
             self,
-            db: Session
+            route_id,
+            selected_columns,
+            scalar,
     ):
-        self.db = db
-
-    def get_user_id_by_route_id_repo(self, route_id) -> Route:
-        route = self.db.query(Route).filter(Route.id == route_id).first()
-        if route:
-            return route.user_id
-
-    def get_route_by_id_repo(self, route_id) -> Route:
-        route = self.db.query(Route).filter(Route.id == route_id).first()
-        return route
-
-    def get_routes_repo(self) -> List[Route]:
-        routes = self.db.query(Route).all()
-        return routes
-
-    def get_routes_by_user_repo(self, user: User) -> List[Route]:
-        routes = self.db.query(Route).filter(Route.user == user).all()
-        return routes
-
-    def get_routes_by_user_id_repo(self, user_id: int) -> List[Route]:
-        routes = self.db.query(Route).filter(Route.user_id == user_id).all()
-        return routes
-
-    def create_route_repo(self, route_in: RouteCreateIn, user_id: int) -> List[Route]:
-        route = Route(
-            user_id=user_id,
-            distance=route_in.distance,
-            users_travel_time=route_in.users_travel_time,
-            users_travel_speed=route_in.users_travel_speed,
-            users_transport=route_in.users_transport,
-            comment=route_in.comment,
-            locname_start=route_in.locname_start,
-            locname_finish=route_in.locname_finish,
+        return await self.get_single(
+            selected_columns=selected_columns,
+            id=route_id,
+            scalar=scalar
         )
-        self.db.add(route)
-        self.db.commit()
-        self.db.refresh(route)
-        return route
 
-    def update_route_repo(
+    async def get_all_routes(
             self,
-            route_in: RouteUpdateIn,
-            route: Route
+            limit,
+            offset,
+            selected_columns,
     ):
-        updated = False
+        return await self.get_multi(
+            limit=limit,
+            offset=offset,
+            selected_columns=selected_columns,
+        )
 
-        if route:
-            if route_in.distance and route.distance != route_in.distance:
-                route.distance = route_in.distance
-                updated = True
+    async def get_routes_by_user_id(
+            self,
+            user_id,
+            limit,
+            offset,
+            selected_columns,
+    ):
+        return await self.get_multi_with_filters(
+            limit=limit,
+            offset=offset,
+            selected_columns=selected_columns,
+            user_id=user_id,
+        )
 
-            if route_in.users_travel_time and route.users_travel_time != route_in.users_travel_time:
-                route.users_travel_time = route_in.users_travel_time
-                updated = True
+    async def create_route(
+            self,
+            route_in,
+            flush=True
+    ):
+        return await self.create(
+            schema=route_in,
+            flush=flush
+        )
 
-            if route_in.users_travel_speed and route.users_travel_speed != route_in.users_travel_speed:
-                route.users_travel_speed = route_in.users_travel_speed
-                updated = True
+    async def update_route(
+            self,
+            route_in,
+            pk_values,
+    ):
+        return await self.update_by_pk(
+            schema=route_in,
+            pk_values=pk_values,
+        )
 
-            if route_in.users_transport and route.users_transport != route_in.users_transport:
-                route.users_transport = route_in.users_transport
-                updated = True
-
-            if route_in.comment and route.comment != route_in.comment:
-                route.comment = route_in.comment
-                updated = True
-
-            if route_in.locname_start and route.locname_start != route_in.locname_start:
-                route.locname_start = route_in.locname_start
-                updated = True
-
-            if route_in.locname_finish and route.locname_finish != route_in.locname_finish:
-                route.locname_finish = route_in.locname_finish
-                updated = True
-
-            if updated:
-                self.db.commit()
-                self.db.refresh(route)
-            return route
-
-    def delete_route_repo(self, route: Route) -> bool:
-        """
-        Удалить пользователя.
-        """
-        if route:
-            self.db.delete(route)
-            self.db.commit()
-            return True
-        return False
+    async def delete_route(
+            self,
+            pk_values,
+    ):
+        return await self.delete_by_pk(
+            pk_values=pk_values,
+        )
