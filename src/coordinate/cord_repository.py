@@ -1,90 +1,104 @@
 from ..models.models import Coordinate
-from ..repositories.base_repositories import BaseRepository
+from ..repositories.sqlalchemy_repository import SQLAlchemyRepository
 
 
-class CoordinateRepository(BaseRepository):
-    def __init__(
+class CoordinateRepository(SQLAlchemyRepository):
+    def __init__(self, db_session):
+        super().__init__(db_session, Coordinate)
+
+    async def get_all_cords(
             self,
-            db_session
+            selected_columns,
+            limit,
+            offset,
+            order: str = "order",
     ):
-        super().__init__(db_session)
-
-    def get_all_cords(
-            self,
-    ):
-        return self.get_multi(
-            Coordinate,
-            order="route_id",
+        return await self.get_multi(
+            order=order,
+            selected_columns=selected_columns,
+            limit=limit,
+            offset=offset,
         )
 
-    def get_cords_by_route_id(
+    async def get_cords_by_route(
             self,
+            selected_columns,
             route_id,
             offset,
-            limit: int = 100
+            limit: int = 100,
+            order: str = "order",
     ):
-        return self.get_multi_with_filters(
-            Coordinate,
-            order="order",
+        return await self.get_multi_with_filters(
+            selected_columns=selected_columns,
+            order=order,
             limit=limit,
             offset=offset,
             route_id=route_id,
         )
 
-    def get_single_cord(
+    async def get_single_cord(
             self,
+            selected_columns,
             route_id,
             order,
     ):
-        return self.get_single(
-            Coordinate,
+        return await self.get_single(
+            selected_columns=selected_columns,
             route_id=route_id,
             order=order
         )
 
-    def get_latest_order(
+    async def get_latest_order(
             self,
-            route_id
+            route_id,
     ):
-        return self.get_max(
-            model=Coordinate,
-            name="order",
+        return await self.get_max(
+            column_name="order",
+            route_id=route_id,
+        )
+
+    async def get_first_order(
+            self,
+            selected_columns,
+            route_id,
+    ):
+        return await self.get_min(
+            selected_columns=selected_columns,
+            column_name="order",
             route_id=route_id
         )
 
-    def get_first_order(
-            self,
-            route_id
-    ):
-        return self.get_min(
-            model=Coordinate,
-            name="order",
-            route_id=route_id
-        )
-
-    def add_cord(
+    async def add_cord(
             self,
             cord_in
     ):
-        return self.create(
-            Coordinate,
-            cord_in
+        return await self.create(
+            schema=cord_in,
+            flush=False
         )
 
-    def add_cords(
+    async def add_cords(
             self,
-            cords,
+            cords_in,
     ):
-        return self.void_multi_create(
-            Coordinate,
-            cords
+        return await self.multi_create(
+            cords_in,
         )
 
-    def delete_cords(
+    async def delete_cord(
+            self,
+            route_id,
+            order,
+    ):
+        return await self.delete(
+            route_id=route_id,
+            order=order
+        )
+
+    async def delete_cords_by_route(
             self,
             route_id
     ):
-        return self.delete_by_filters(
-            Coordinate,
+        return await self.delete(
             route_id=route_id
         )

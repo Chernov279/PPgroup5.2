@@ -2,7 +2,7 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Depends
 from .rat_schemas import RatingOut
-from .rat_services import RatingService
+from .rat_service import RatingService
 rating = APIRouter(prefix="/rating", tags=["Rating of routes"])
 
 

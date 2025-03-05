@@ -1,4 +1,4 @@
-from .base_exceptions import AppException, NoContentException
+from .base_exceptions import AppException, NoContentResponse, FailedActionException
 
 
 class CordsNotFoundException(AppException):
@@ -8,18 +8,31 @@ class CordsNotFoundException(AppException):
         super().__init__(status_code=404, detail=detail)
 
 
-class CordsBadRequest(AppException):
-    def __init__(self, route_id: int = None):
-        detail = f"No coordinates with route ID {route_id}" if route_id is not None \
-            else "No coordinates"
+class CordPermissionException(AppException):
+    def __init__(self, action):
+        detail = f"You do not have permission to {action}." if action else "You do not have permission."
+
         super().__init__(status_code=400, detail=detail)
 
 
-class CordsAddedException(NoContentException):
+# class CordsBadRequest(AppException):
+#     def __init__(self, route_id: int = None):
+#         detail = f"No coordinates with route ID {route_id}" if route_id is not None \
+#             else "No coordinates"
+#         super().__init__(status_code=400, detail=detail)
+
+class CordFailedDeleteException(FailedActionException):
     def __init__(self):
-        super().__init__(message="Coordinates successfully added to route")
+        super().__init__(action="delete coordinate")
 
 
-class CordsDeletedException(NoContentException):
+class CordsAddedException(NoContentResponse):
     def __init__(self):
-        super().__init__(message="Coordinates successfully deleted from route")
+        msg = "Coordinates successfully added to route"
+        super().__init__(status_code=204, detail={"msg": msg})
+
+
+class CordsDeletedException(NoContentResponse):
+    def __init__(self):
+        msg = "Coordinates successfully deleted from route"
+        super().__init__(status_code=204, detail={"msg": msg})

@@ -155,7 +155,6 @@ class RouteUnitOfWork(SqlAlchemyUnitOfWork):
             route = await self.repository.delete_route(
                 pk_values=[route_id,],
             )
-            print(route)
             await self.db_session.commit()
             return route
         except Exception as e:

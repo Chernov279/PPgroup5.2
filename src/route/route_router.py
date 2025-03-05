@@ -52,6 +52,6 @@ async def update_route_endpoint(
 
 @route.delete("/{route_id}")
 async def delete_route_endpoint(
-        route_out: Annotated[RouteOut, Depends(RouteService.delete_route_service)]
+        route_out: Annotated[None, Depends(RouteService.delete_route_service)]
 ):
     return route_out

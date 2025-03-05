@@ -2,120 +2,115 @@ from typing import Annotated, List
 
 from fastapi import Depends
 
-from ..config.database.db_helper import get_db
+from .cord_dependencies import get_coordinate_uow
+from .cord_schemas import CoordinateCreateIn
+from .cord_uow import CoordinateUnitOfWork
+from .cord_utils import create_cords_create_internal
+
 from ..config.token_config import oauth2_scheme
-from .cord_repository import CoordinateRepository
-from .cord_schemas import CoordinatesIn, CoordinatesInDB
-from ..exceptions.coordinate_exceptions import CordsBadRequest, CordsNotFoundException, CordsAddedException, \
-    CordsDeletedException
+from ..exceptions.base_exceptions import NoContentResponse
+from ..exceptions.coordinate_exceptions import (
+    CordsNotFoundException,
+    CordPermissionException,
+    CordsDeletedException,
+    CordFailedDeleteException
+)
 from ..exceptions.route_exceptions import RouteNotFoundException
-from ..exceptions.token_exceptions import InvalidTokenUserException
-from ..exceptions.user_exceptions import UserHasNotPermission
-from ..unit_of_work.route_uow import RouteUOW
-from ..unit_of_work.token_uow import TokenUOW
+from ..models.models import Coordinate, Route
+from ..token.token_utils import get_sub_from_token
+from ..utils.database_utils import valid_limit, valid_offset
 
 
 class CoordinateService:
-    def get_all_cords(
-            self,
-            db_session=Depends(get_db)
-    ):
-        cords = CoordinateRepository(db_session).get_all_cords()
-        return cords
-
-    def get_cords_by_route(
-            self,
-            route_id: int,
-            offset: int = 0,
+    @staticmethod
+    async def get_all_cords_service(
+            cord_uow: CoordinateUnitOfWork = Depends(get_coordinate_uow),
             limit: int = 30,
-            db_session=Depends(get_db)
+            offset: int = 0,
     ):
-        if not (0 < limit <= 100):
-            limit = 30
-        cords = CoordinateRepository(db_session).get_cords_by_route_id(route_id, offset, limit)
-        if not cords:
-            raise CordsNotFoundException(route_id)
-        return cords
+        valid_limit(limit),
+        valid_offset(offset)
 
-    def add_cords_by_route(
-            self,
+        async with cord_uow as uow:
+            coordinates = await uow.get_all_cords_uow(
+                selected_columns=Coordinate.get_columns_by_names("latitude", "longitude", "order"),
+                limit=limit,
+                offset=offset,
+            )
+        if not coordinates:
+            raise CordsNotFoundException()
+        return coordinates
+
+    @staticmethod
+    async def get_cords_by_route_service(
             route_id: int,
-            cords: List[CoordinatesIn],
-            token: Annotated[str, Depends(oauth2_scheme)],
-            db_session=Depends(get_db),
-            start_from_end: bool | None = True,
-
+            limit: int = 30,
+            offset: int = 0,
+            cord_uow: CoordinateUnitOfWork = Depends(get_coordinate_uow)
     ):
-        if not cords:
-            raise CordsBadRequest(route_id)
+        valid_limit(limit),
+        valid_offset(offset)
 
-        user_id = TokenUOW(db_session).user_exists_by_token_uow(token)
-        if not user_id:
-            raise InvalidTokenUserException(user_id)
+        async with cord_uow as uow:
+            coordinates = await uow.get_cords_by_route_uow(
+                selected_columns=Coordinate.get_columns_by_names("latitude", "longitude", "order"),
+                route_id=route_id)
+        if not coordinates:
+            raise CordsNotFoundException()
+        return coordinates
 
-        user_id_route = RouteUOW(db_session).get_user_id_by_route_id(route_id)
-        if not user_id_route:
-            raise RouteNotFoundException(user_id_route)
-
-        if user_id != user_id_route:
-            raise UserHasNotPermission("change route coordinates of other user")
-
-        cord_repo = CoordinateRepository(db_session)
-
-        if start_from_end:
-            latest_order = cord_repo.get_latest_order(route_id)
-            if latest_order is None:
-                latest_order = 0
-            else:
-                latest_order += 1
-            cords_db = [CoordinatesInDB(
+    @staticmethod
+    async def add_cords_by_route_service(
+            route_id: int,
+            coordinates_in: List[CoordinateCreateIn],
+            token: Annotated[str, Depends(oauth2_scheme)],
+            cord_uow: CoordinateUnitOfWork = Depends(get_coordinate_uow)
+    ):
+        user_id = get_sub_from_token(token)
+        async with cord_uow as uow:
+            user_id_route = await uow.get_user_by_route(
+                route_id=route_id,
+                selected_columns=[Route.user_id],
+            )
+            if not user_id_route:
+                raise RouteNotFoundException()
+            if user_id_route != user_id:
+                raise CordPermissionException(action="add coordinates")
+            cur_order = await uow.get_current_order(
+                route_id=route_id,
+            )
+            if cur_order is None:
+                cur_order = -1
+            coordinates_internal = create_cords_create_internal(
+                schemas=coordinates_in,
                 route_id=route_id,
                 user_id=user_id,
-                latitude=cords[order].latitude,
-                longitude=cords[order].longitude,
-                order=order + latest_order
+                order=cur_order + 1,
             )
-                for order in range(len(cords))
-            ]
-        else:
-            first_order = cord_repo.get_first_order(route_id)
-            if first_order is None:
-                first_order = 0
-            else:
-                first_order -= 1
-            cords_db = [CoordinatesInDB(
-                route_id=route_id,
-                user_id=user_id,
-                latitude=cords[order].latitude,
-                longitude=cords[order].longitude,
-                order=first_order - order
+            await uow.add_cords_by_route_uow(
+                cords_in=coordinates_internal
             )
-                for order in range(len(cords))
-            ]
-        cord_repo.add_cords(
-            cords_db
-        )
-        raise CordsAddedException()
+        return NoContentResponse(status_code=201, detail={"msg": "Coordinates added successfully"}).get_response()
 
-    def delete_all_cords_by_route(
-            self,
-            route_id,
+    @staticmethod
+    async def delete_all_cords_by_route_service(
+            route_id: int,
             token: Annotated[str, Depends(oauth2_scheme)],
-            db_session=Depends(get_db)
+            cord_uow: CoordinateUnitOfWork = Depends(get_coordinate_uow)
     ):
-        user_id = TokenUOW(db_session).user_exists_by_token_uow(token)
-        if not user_id:
-            raise InvalidTokenUserException(user_id)
+        user_id = get_sub_from_token(token)
+        async with cord_uow as uow:
+            user_id_route = await uow.get_route_by_id_uow(
+                route_id=route_id,
+                selected_columns=[Coordinate.user_id,],
+            )
+            if not user_id_route:
+                raise CordsNotFoundException()
+            if user_id_route != user_id:
+                raise CordPermissionException(action="delete coordinates")
 
-        user_id_route = RouteUOW(db_session).get_user_id_by_route_id(route_id)
-        if not user_id_route:
-            raise RouteNotFoundException(route_id)
+            is_deleted = await uow.delete_all_cords_by_route_uow(route_id=route_id)
+            if not is_deleted:
+                raise CordFailedDeleteException()
 
-        if user_id != user_id_route:
-            raise UserHasNotPermission("delete route coordinates of other user")
-
-        CoordinateRepository(db_session).delete_cords(
-            route_id
-        )
-
-        raise CordsDeletedException()
+        return CordsDeletedException().get_response()

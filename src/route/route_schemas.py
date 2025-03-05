@@ -5,13 +5,13 @@ from ..models.models import Route
 from ..schemas.base_schemas import BaseSchema
 
 
-class RouteModel(BaseSchema):
+class RouteBaseSchema(BaseSchema):
     @classmethod
     def get_selected_columns(cls, cls_model=Route):
         return super().get_selected_columns(cls_model)
 
 
-class RouteCreateIn(RouteModel):
+class RouteCreateIn(RouteBaseSchema):
     distance: float | None = None
     users_travel_time: int | None = None
     users_travel_speed: int | None = None
@@ -25,7 +25,7 @@ class RouteCreateInternal(RouteCreateIn):
     user_id: int | None = None
 
 
-class RouteUpdateIn(RouteModel):
+class RouteUpdateIn(RouteBaseSchema):
     id: int
     distance: float | None = None
     users_travel_time: int | None = None
@@ -35,7 +35,7 @@ class RouteUpdateIn(RouteModel):
     locname_finish: str | None = None
 
 
-class RouteOut(RouteModel):
+class RouteOut(RouteBaseSchema):
     id: int | None = None
     user_id: int | None = None
     distance: float | None = None

@@ -19,11 +19,13 @@ class RouteRepository(SQLAlchemyRepository):
             route_id,
             selected_columns,
             scalar,
+            limit: int = 1,
     ):
         return await self.get_single(
             selected_columns=selected_columns,
             id=route_id,
-            scalar=scalar
+            scalar=scalar,
+            limit=limit,
         )
 
     async def get_all_routes(

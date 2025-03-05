@@ -1,29 +1,27 @@
+from ..models.models import Coordinate
 from ..schemas.base_schemas import BaseSchema
 
 
-class CordOut(BaseSchema):
-    route_id: int
-    user_id: int
+class CoordinateBaseSchema(BaseSchema):
+    @classmethod
+    def get_selected_columns(cls, cls_model=Coordinate):
+        return super().get_selected_columns(cls_model)
+
+
+class CoordinateOut(CoordinateBaseSchema):
     order: int | None = None
     latitude: float
     longitude: float
 
 
-class CoordinatesIn(BaseSchema):
+class CoordinateCreateIn(CoordinateBaseSchema):
     latitude: float
     longitude: float
 
 
-class CoordinatesInDB(BaseSchema):
-    user_id: int
+class CoordinateInternal(CoordinateBaseSchema):
+    user_id: int | None = None
     route_id: int | None = None
     order: int | None = None
-    latitude: float
-    longitude: float
-
-    def __str__(self):
-        return (f"user_id={self.user_id},"
-                f"route_id={self.route_id},"
-                f"order={self.order},"
-                f"latitude={self.latitude},"
-                f"longitude={self.longitude}")
+    latitude: float | None = None
+    longitude: float | None = None

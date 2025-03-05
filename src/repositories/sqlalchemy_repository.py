@@ -1,4 +1,4 @@
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Tuple, Union
 from sqlalchemy import func, select, delete
 
 from .base_repository import AbstractRepository
@@ -66,7 +66,7 @@ class SQLAlchemyRepository(AbstractRepository):
         hasAttrOrder(self.model, order)
         isValidFilters(self.model, filters)
 
-        stmt_select = (select(*selected_columns).select_from(self.model if selected_columns else select(self.model)))
+        stmt_select = select(*selected_columns).select_from(self.model) if selected_columns else select(self.model)
         stmt = (
             stmt_select
             .filter_by(**filters)
@@ -80,22 +80,19 @@ class SQLAlchemyRepository(AbstractRepository):
     async def get_max(
             self,
             column_name: str,
-            limit=1,
-            selected_columns: Optional[List[Any]] = None,
+            scalar: bool = True,
             **filters
     ):
-
         hasAttrOrder(self.model, column_name)
 
-        subquery = select(
-            (func.max(getattr(self.model, column_name))).scalar_subquery()
-        )
-        stmt_select = (select(*selected_columns).select_from(self.model if selected_columns else select(self.model)))
-        stmt = stmt_select.where(getattr(self.model, column_name) == subquery)
+        stmt = select(func.max(getattr(self.model, column_name)))
+
         for key, value in filters.items():
             stmt = stmt.where(getattr(self.model, key) == value)
-        stmt = stmt.limit(limit)
+
         result = await self.db_session.execute(stmt)
+        if scalar:
+            return result.scalar_one_or_none()
         return result.first()
 
     async def get_min(
@@ -103,6 +100,7 @@ class SQLAlchemyRepository(AbstractRepository):
             column_name: str,
             limit=1,
             selected_columns: Optional[List[Any]] = None,
+            scalar: bool = False,
             **filters
     ):
         hasAttrOrder(self.model, column_name)
@@ -116,6 +114,8 @@ class SQLAlchemyRepository(AbstractRepository):
             stmt = stmt.where(getattr(self.model, key) == value)
         stmt = stmt.limit(limit)
         result = await self.db_session.execute(stmt)
+        if scalar:
+            return result.scalar()
         return result.first()
 
     async def create(
@@ -135,48 +135,19 @@ class SQLAlchemyRepository(AbstractRepository):
             await self.db_session.refresh(instance)
             return instance
 
-    # async def void_multi_create(self, schemas: Union[List, Tuple], checkpoint=False, commit=True) -> None:
-    #
-    #     async with self.db_session() as session:
-    #         for schema in schemas:
-    #             isValidSchema(self, self.model, schema)
-    #
-    #             data = schema.model_dump()
-    #
-    #             instance = self.model(**data)
-    #             session.add(instance)
-    #             if checkpoint and commit:
-    #                 await session.commit()
-    #         if commit:
-    #             await session.commit()
-    #
-    # async def multi_create_with_return(self, schemas: Union[List, Tuple], checkpoint: bool = False, commit: bool = True,
-    #                                    commit_step: int = 10) -> List:
-    #     returning = [None] * len(schemas)
-    #     cur_commit_step = 0
-    #     async with self.db_session as session:
-    #         for schema_ind in range(len(schemas)):
-    #
-    #             schema = schemas[schema_ind]
-    #             isValidSchema(self, self.model, schema)
-    #
-    #             data = schema.model_dump()
-    #
-    #             instance = self.model(**data)
-    #             session.add(instance)
-    #             await session.refresh(instance)
-    #             returning[schema_ind] = instance
-    #
-    #             if commit and checkpoint:
-    #                 if cur_commit_step == 10 or cur_commit_step > 10:
-    #                     await session.commit()
-    #                     cur_commit_step = 0
-    #                 else:
-    #                     cur_commit_step += 1
-    #         if commit:
-    #             await session.commit()
-    #         return returning
-    #
+    async def multi_create(
+            self,
+            schemas: Union[List, Tuple],
+    ) -> None:
+
+        for schema in schemas:
+            isValidSchema(self, self.model, schema)
+
+            data = schema.model_dump()
+
+            instance = self.model(**data)
+            self.db_session.add(instance)
+
     async def update(
             self,
             schema,
@@ -198,6 +169,7 @@ class SQLAlchemyRepository(AbstractRepository):
             return instance
         else:
             raise UserNotFoundException()
+
     # TODO update_by_object
     async def update_by_pk(
             self,

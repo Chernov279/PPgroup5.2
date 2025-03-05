@@ -1,28 +1,32 @@
 from src.exceptions.base_exceptions import AppException
-from src.models.base_model import BaseModel
+from pydantic import BaseModel
 from src.schemas.base_schemas import BaseSchema
 
 
-def add_internal_params(model, cls_internal: type(BaseSchema), raise_exception: bool = True, **params):
+def add_internal_params(schema, cls_internal, raise_exception: bool = True, **params):
     import sqlalchemy.engine.row as sql_row
+    if not isinstance(cls_internal, type):
+        cls_internal = cls_internal.__class__
+
     new_model = cls_internal()
 
-    if isinstance(model, BaseModel):
+    if isinstance(schema, BaseModel):
         new_model = cls_internal()
-        for key, value in model.__dict__.items():
+        for key, value in schema.__dict__.items():
             if hasattr(new_model, key):
                 setattr(new_model, key, value)
             elif raise_exception:
-                raise AppException(400, f"cls {cls_internal} has not parameter {key} from model {model.__class__}")
+                raise AppException(400, f"cls {cls_internal} has not parameter {key} from model {schema.__class__}")
 
-    elif isinstance(model, sql_row.Row):
-        for key, value in model._asdict().items():
+    elif isinstance(schema, sql_row.Row):
+        for key, value in schema._asdict().items():
             if hasattr(new_model, key):
                 setattr(new_model, key, value)
             elif raise_exception:
                 raise AppException(400, f"cls {cls_internal} has not parameter {key}")
     else:
-        raise AppException()
+        raise AppException(400, f"schema {schema} is not instance of BaseModel or sql.row, Its {type(schema)}")
+
     for key, value in params.items():
         if hasattr(new_model, key):
             setattr(new_model, key, value)
