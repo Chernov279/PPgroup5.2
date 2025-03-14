@@ -17,3 +17,8 @@ class RatingFailedActionException(AppException):
     def __init__(self, action: str = None):
         detail = f"Failed to {action}." if action is not None else f"Failed the rating action."
         super().__init__(status_code=400, detail=detail)
+
+
+class RatingFailedDeleteException(RatingFailedActionException):
+    def __init__(self):
+        super().__init__("delete rating")

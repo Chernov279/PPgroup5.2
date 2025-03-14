@@ -4,38 +4,48 @@ from src.repositories.sqlalchemy_repository import SQLAlchemyRepository
 
 class RatingRepository(SQLAlchemyRepository):
     def __init__(self, db_session):
-        super().__init__(Rating, db_session)
+        super().__init__(db_session, Rating)
 
-    def get_rat_by_ids(self, user_id, route_id):
-        return self.get_single(user_id=user_id, route_id=route_id)
-
-    def get_rats_by_route_id(self, route_id):
-        return self.get_multi_with_filters(
-            route_id=route_id
+    async def get_rating_by_pks(self, selected_columns, pks):
+        return await self.get_single(
+            selected_columns=selected_columns,
+            user_id=pks.user_id,
+            route_id=pks.route_id,
         )
 
-    def get_rats_by_user_id(self, user_id):
-        return self.get_multi_with_filters(
+    async def get_all_ratings(self, selected_columns, limit, offset):
+        return await self.get_multi(
+            selected_columns=selected_columns,
+            limit=limit,
+            offset=offset,
+            order="created_time"
+        )
+
+    async def get_all_my_ratings(self, selected_columns, limit, offset, user_id):
+        return await self.get_multi_with_filters(
+            selected_columns=selected_columns,
+            limit=limit,
+            offset=offset,
+            order="created_time",
             user_id=user_id,
-            order="created_time"
         )
 
-    def get_rats_all(self):
-        return self.get_multi(
-            order="created_time"
+    async def create_rating(self, rating_in, selected_columns):
+        return await self.create(
+            schema=rating_in,
+            selected_columns=selected_columns,
+            flush=True
         )
 
-    def create_rat(self, rating_in):
-        return self.create(
-            rating_in
-        )
-
-    def update_rat(self, rating_in):
-        return self.update(
+    async def update_rating(self, rating_in):
+        return await self.update(
             schema=rating_in,
             user_id=rating_in.user_id,
             route_id=rating_in.route_id
         )
 
-    def delete_rat(self, user_id, route_id):
-        return self.delete(user_id=user_id, route_id=route_id)
+    async def delete_rating(self, user_id, route_id):
+        return await self.delete(
+            user_id=user_id,
+            route_id=route_id
+        )

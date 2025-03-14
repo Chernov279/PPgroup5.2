@@ -170,7 +170,7 @@ class SQLAlchemyRepository(AbstractRepository):
         else:
             raise UserNotFoundException()
 
-    # TODO update_by_object
+    # TODO update_by_object, selected_columns to instance for update
     async def update_by_pk(
             self,
             schema,

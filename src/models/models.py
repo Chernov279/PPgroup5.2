@@ -83,8 +83,8 @@ class Rating(BaseModel):
 
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
 
-    route_id = Column(Integer, ForeignKey('routes.id', ondelete='CASCADE'), nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    route_id = Column(Integer, ForeignKey('routes.id', ondelete='CASCADE'), nullable=False, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, primary_key=True)
 
     value = Column(Integer, nullable=False)
     created_time = Column(DateTime, default=func.now())

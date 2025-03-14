@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from ..models.models import Route
 
@@ -17,8 +17,8 @@ class RouteRepository(SQLAlchemyRepository):
     async def get_route_by_id(
             self,
             route_id,
-            selected_columns,
-            scalar,
+            selected_columns: Optional[List] = None,
+            scalar: bool = False,
             limit: int = 1,
     ):
         return await self.get_single(

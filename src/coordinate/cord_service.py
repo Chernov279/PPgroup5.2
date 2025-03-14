@@ -28,7 +28,7 @@ class CoordinateService:
             limit: int = 30,
             offset: int = 0,
     ):
-        valid_limit(limit),
+        valid_limit(limit)
         valid_offset(offset)
 
         async with cord_uow as uow:
@@ -100,7 +100,7 @@ class CoordinateService:
     ):
         user_id = get_sub_from_token(token)
         async with cord_uow as uow:
-            user_id_route = await uow.get_route_by_id_uow(
+            user_id_route = await uow.get_user_by_route(
                 route_id=route_id,
                 selected_columns=[Coordinate.user_id,],
             )
