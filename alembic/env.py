@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from src.config.database.db_config import settings_db
-from src.config.database.db_helper import Base
+from src.models.base_model import DeclarativeBaseModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -19,7 +19,7 @@ if config.config_file_name is not None:
 
 section = config.config_ini_section
 
-config.set_section_option(section, "sqlalchemy.url", settings_db.DATABASE_URL)
+config.set_section_option(section, "sqlalchemy.url", settings_db.DATABASE_URL_SYNC)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
@@ -27,7 +27,7 @@ config.set_section_option(section, "sqlalchemy.url", settings_db.DATABASE_URL)
 # target_metadata = mymodel.Base.metadata
 
 from src.models.models import User, Route, Coordinate, Rating
-target_metadata = Base.metadata
+target_metadata = DeclarativeBaseModel.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -66,6 +66,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

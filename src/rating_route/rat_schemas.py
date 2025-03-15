@@ -15,7 +15,7 @@ class RatingBaseSchema(BaseSchema):
 
 class RatingShortOut(RatingBaseSchema):
     value: int
-    created_time: datetime.datetime
+    created_at: datetime.datetime
     comment: str | None
 
 

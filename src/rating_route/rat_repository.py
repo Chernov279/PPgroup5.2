@@ -18,7 +18,7 @@ class RatingRepository(SQLAlchemyRepository):
             selected_columns=selected_columns,
             limit=limit,
             offset=offset,
-            order="created_time"
+            order="created_at"
         )
 
     async def get_all_my_ratings(self, selected_columns, limit, offset, user_id):
@@ -26,7 +26,7 @@ class RatingRepository(SQLAlchemyRepository):
             selected_columns=selected_columns,
             limit=limit,
             offset=offset,
-            order="created_time",
+            order="created_at",
             user_id=user_id,
         )
 

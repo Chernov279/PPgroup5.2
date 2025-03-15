@@ -3,16 +3,16 @@ from sqlalchemy import func, select, delete
 
 from .base_repository import AbstractRepository
 from ..exceptions.user_exceptions import UserNotFoundException
-from ..models.base_model import BaseModel
-from ..utils.base_utils import isValidModel, hasAttrOrder, isValidSchema, isValidFilters
+from ..models.base_model import DeclarativeBaseModel
+from ..utils.base_utils import is_valid_model, has_attr_order, is_valid_schema, isValidFilters
 
 
 # TODO add method get_by_pk
 # TODO add method get_with_join
 class SQLAlchemyRepository(AbstractRepository):
-    def __init__(self, db_session, model: type(BaseModel)):
+    def __init__(self, db_session, model: type(DeclarativeBaseModel)):
         self.db_session = db_session
-        isValidModel(self, model)
+        is_valid_model(self, model)
         self.model = model
 
     async def get_single(
@@ -41,7 +41,7 @@ class SQLAlchemyRepository(AbstractRepository):
             offset: int = 0,
             selected_columns: Optional[List[Any]] = None,
     ):
-        hasAttrOrder(self.model, order)
+        has_attr_order(self.model, order)
 
         stmt_select = (
             select(*selected_columns).select_from(self.model) if selected_columns else select(self.model))
@@ -61,9 +61,9 @@ class SQLAlchemyRepository(AbstractRepository):
             offset: int = 0,
             selected_columns: Optional[List[Any]] = None,
             **filters
-    ) -> List[BaseModel]:
+    ) -> List[DeclarativeBaseModel]:
 
-        hasAttrOrder(self.model, order)
+        has_attr_order(self.model, order)
         isValidFilters(self.model, filters)
 
         stmt_select = select(*selected_columns).select_from(self.model) if selected_columns else select(self.model)
@@ -83,7 +83,7 @@ class SQLAlchemyRepository(AbstractRepository):
             scalar: bool = True,
             **filters
     ):
-        hasAttrOrder(self.model, column_name)
+        has_attr_order(self.model, column_name)
 
         stmt = select(func.max(getattr(self.model, column_name)))
 
@@ -103,7 +103,7 @@ class SQLAlchemyRepository(AbstractRepository):
             scalar: bool = False,
             **filters
     ):
-        hasAttrOrder(self.model, column_name)
+        has_attr_order(self.model, column_name)
 
         subquery = select(
             (func.min(getattr(self.model, column_name))).scalar_subquery()
@@ -123,8 +123,8 @@ class SQLAlchemyRepository(AbstractRepository):
             schema,
             flush: bool = True,
             selected_columns: Optional[List] = None
-    ) -> Optional[BaseModel]:
-        isValidSchema(self, self.model, schema)
+    ) -> Optional[DeclarativeBaseModel]:
+        is_valid_schema(self, self.model, schema)
 
         data = schema.model_dump()
 
@@ -141,7 +141,7 @@ class SQLAlchemyRepository(AbstractRepository):
     ) -> None:
 
         for schema in schemas:
-            isValidSchema(self, self.model, schema)
+            is_valid_schema(self, self.model, schema)
 
             data = schema.model_dump()
 
@@ -152,8 +152,8 @@ class SQLAlchemyRepository(AbstractRepository):
             self,
             schema,
             **filters
-    ) -> BaseModel:
-        isValidSchema(self, self.model, schema)
+    ) -> DeclarativeBaseModel:
+        is_valid_schema(self, self.model, schema)
         isValidFilters(self.model, filters)
 
         data = schema.model_dump()
@@ -176,8 +176,8 @@ class SQLAlchemyRepository(AbstractRepository):
             schema,
             pk_values: List[Any],
 
-    ) -> BaseModel:
-        isValidSchema(self, self.model, schema)
+    ) -> DeclarativeBaseModel:
+        is_valid_schema(self, self.model, schema)
 
         data = schema.model_dump()
 

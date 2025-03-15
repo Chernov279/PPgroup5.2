@@ -42,7 +42,7 @@ class RouteOut(RouteBaseSchema):
     users_travel_time: int | None = None
     users_transport: str | None = None
     comment: str | None = None
-    created_time: datetime.datetime | None = None
+    created_at: datetime.datetime | None = None
     locname_start: str | None = None
     locname_finish: str | None = None
 

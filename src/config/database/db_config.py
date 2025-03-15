@@ -17,6 +17,7 @@ class ConfigDataBase(BaseSettings):
 
     DB_ECHO_LOG: bool = True
     DATABASE_URL: Optional[str] = None
+    DATABASE_URL_SYNC: Optional[str] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -37,6 +38,10 @@ class ConfigDataBase(BaseSettings):
 
         self.DATABASE_URL = (
             f"postgresql+asyncpg://{self.DATABASE_USERNAME}:{self.DATABASE_PASSWORD}"
+            f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
+        )
+        self.DATABASE_URL_SYNC = (
+            f"postgresql+psycopg2://{self.DATABASE_USERNAME}:{self.DATABASE_PASSWORD}"
             f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
         )
 

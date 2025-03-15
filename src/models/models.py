@@ -1,94 +1,143 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, Boolean
-from sqlalchemy.orm import relationship
+import datetime
+
+from sqlalchemy import Integer, String, DateTime, Float, ForeignKey, Boolean
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 
-from .base_model import BaseModel
+from .base_model import DeclarativeBaseModel, PrimaryId, TimeBaseModel
 
-# TODO Mapper, mapping
-class User(BaseModel):
-    # """
-    # Модель пользователя в базе данных.
-    #
+
+# TODO сделать отдельную модель для избранных роутов
+
+class User(DeclarativeBaseModel, PrimaryId, TimeBaseModel):
+    """
+    Модель пользователя.
+
+    Атрибуты:
+        name (str): Имя пользователя.
+        email (str): Уникальный email пользователя.
+        telephone_number (str | None): Номер телефона, необязателен.
+        surname (str | None): Фамилия пользователя.
+        patronymic (str | None): Отчество пользователя.
+        location (str | None): Местоположение пользователя.
+        sex (str | None): Пол пользователя.
+        hashed_password (str): Хэшированный пароль пользователя.
+        birth (str | None): Дата рождения пользователя.
+        is_active (bool): Флаг активности пользователя.
+        last_active_time (datetime): Время последней активности пользователя.
+        status (str | None): Статус пользователя.
+        refresh_token_update_time (datetime): Время последнего обновления refresh-токена.
+
+        routes (list[Route]): Маршруты, созданные пользователем.
+        ratings (list[Rating]): Оценки маршрутов, оставленные пользователем.
+    """
+
     __tablename__ = 'users'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    telephone_number: Mapped[str] = mapped_column(String, unique=True, nullable=True)
+    surname: Mapped[str] = mapped_column(String, nullable=True)
+    patronymic: Mapped[str] = mapped_column(String, nullable=True)
+    location: Mapped[str] = mapped_column(String, nullable=True)
+    sex: Mapped[str] = mapped_column(String, nullable=True)
+    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    birth: Mapped[str] = mapped_column(String, nullable=True)
 
-    name = Column(String, nullable=False)
-    email = Column(String)  # UNIQUE
-    telephone_number = Column(String)  # UNIQUE
-    surname = Column(String)
-    patronymic = Column(String)
-    location = Column(String)
-    sex = Column(String)
-    # TODO сделать отдельную модель для избранных роутов
-    hashed_password = Column(String, nullable=False)
-    authorized_time = Column(DateTime, default=func.now())
-    last_updated_time = Column(DateTime, default=func.now(), onupdate=func.now())
-    birth = Column(String)
-    # is_active = Column(Boolean)
-    # last_active_time = Column(DateTime)
-    # refresh_token_update_time = Column(Datetime)
-    # status = Column(String)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=True)
+    last_active_time: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=True)
+    status: Mapped[str] = mapped_column(String, nullable=True)
+    refresh_token_update_time: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=True)
 
-    routes = relationship("Route", back_populates="user")
-    ratings = relationship("Rating", back_populates="user")
+    routes: Mapped[list["Route"]] = relationship("Route", back_populates="user", cascade="all, delete-orphan")
+    ratings: Mapped[list["Rating"]] = relationship("Rating", back_populates="user", cascade="all, delete-orphan")
 
 
-class Route(BaseModel):
-    # """
-    # Модель маршрута.
-    #
-    __tablename__ = 'routes'
+class Route(DeclarativeBaseModel, TimeBaseModel, PrimaryId):
+    """
+    Модель маршрута.
 
-    id = Column(Integer, primary_key=True, unique=True, nullable=False, autoincrement=True)
+    Атрибуты:
+        user_id (int): ID пользователя, создавшего маршрут.
+        distance (float | None): Расстояние маршрута.
+        users_travel_time (int | None): Время, затраченное на маршрут.
+        users_travel_speed (int | None): Скорость передвижения по маршруту.
+        users_transport (str | None): Вид транспорта, использованный для маршрута.
+        comment (str | None): Комментарий к маршруту.
+        locname_start (str | None): Начальная точка маршрута.
+        locname_finish (str | None): Конечная точка маршрута.
 
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+        user (User): Пользователь, создавший маршрут.
+        ratings (list[Rating]): Оценки маршрута.
+        coordinates (list[Coordinate]): Координаты маршрута.
+    """
 
-    distance = Column(Float)
-    users_travel_time = Column(Integer)
-    users_travel_speed = Column(Integer)
-    users_transport = Column(String)
-    comment = Column(String)
-    created_time = Column(DateTime, default=func.now())
-    locname_start = Column(String)
-    locname_finish = Column(String)
+    __tablename__ = "routes"
 
-    user = relationship("User", back_populates="routes")
-    ratings = relationship("Rating", back_populates="route")
-    coordinates = relationship("Coordinate", back_populates="routes")
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+
+    distance: Mapped[float] = mapped_column(Float, nullable=True)
+    users_travel_time: Mapped[int] = mapped_column(Integer, nullable=True)
+    users_travel_speed: Mapped[int] = mapped_column(Integer, nullable=True)
+    users_transport: Mapped[str] = mapped_column(String, nullable=True)
+    comment: Mapped[str] = mapped_column(String, nullable=True)
+    locname_start: Mapped[str] = mapped_column(String, nullable=True)
+    locname_finish: Mapped[str] = mapped_column(String, nullable=True)
+
+    user: Mapped["User"] = relationship("User", back_populates="routes")
+    ratings: Mapped[list["Rating"]] = relationship("Rating", back_populates="route", cascade="all, delete-orphan")
+    coordinates: Mapped[list["Coordinate"]] = relationship("Coordinate", back_populates="route", cascade="all, delete-orphan")
 
 
-class Coordinate(BaseModel):
-    #
-    # Модель координаты.
-    #
+class Coordinate(DeclarativeBaseModel):
+    """
+    Модель координаты маршрута.
+
+    Атрибуты:
+        order (int): Порядковый номер координаты.
+        route_id (int): ID маршрута.
+        user_id (int): ID пользователя, добавившего координату.
+        latitude (float): Широта координаты.
+        longitude (float): Долгота координаты.
+        location (str): Название места.
+
+        route (Route): Связанный маршрут.
+    """
     __tablename__ = 'coordinates'
 
-    route_id = Column(Integer, ForeignKey('routes.id', ondelete='CASCADE'), nullable=False, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, primary_key=True)
+    order: Mapped[int] = mapped_column(Integer, primary_key=True)
 
-    latitude = Column(Float, nullable=False)
-    longitude = Column(Float, nullable=False)
-    order = Column(Integer, primary_key=True)
-    # location = Column(String)
+    route_id: Mapped[int] = mapped_column(ForeignKey("routes.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
 
-    routes = relationship("Route", back_populates="coordinates")
+    latitude: Mapped[float] = mapped_column(Float, nullable=False)
+    longitude: Mapped[float] = mapped_column(Float, nullable=False)
+    location: Mapped[str] = mapped_column(String, nullable=True)
+
+    route: Mapped["Route"] = relationship("Route", back_populates="coordinates")
 
 
-class Rating(BaseModel):
-    # """
-    # Модель оценки маршрута.
-    #
+class Rating(DeclarativeBaseModel, TimeBaseModel):
+    """
+    Модель оценки маршрута.
+
+    Атрибуты:
+        route_id (int): ID маршрута.
+        user_id (int): ID пользователя, оставившего оценку.
+        value (int): Оценка маршрута.
+        comment (str | None): Комментарий к оценке.
+
+        route (Route): Связанный маршрут.
+        user (User): Пользователь, оставивший оценку.
+    """
+
     __tablename__ = 'ratings'
 
-    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    route_id: Mapped[int] = mapped_column(ForeignKey("routes.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
 
-    route_id = Column(Integer, ForeignKey('routes.id', ondelete='CASCADE'), nullable=False, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False, primary_key=True)
+    value: Mapped[int] = mapped_column(Integer, nullable=False)
+    comment: Mapped[str] = mapped_column(String, nullable=True)
 
-    value = Column(Integer, nullable=False)
-    created_time = Column(DateTime, default=func.now())
-
-    comment = Column(String)
-    route = relationship("Route", back_populates="ratings")
-    user = relationship("User", back_populates="ratings")
+    route: Mapped["Route"] = relationship("Route", back_populates="ratings")
+    user: Mapped["User"] = relationship("User", back_populates="ratings")

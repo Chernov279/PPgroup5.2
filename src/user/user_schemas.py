@@ -37,5 +37,5 @@ class UserShortOut(UserBaseSchema):
 class UserDetailOut(UserShortOut):
     surname: str | None
     sex: str | None
-    authorized_time: datetime.datetime | None
+    created_at: datetime.datetime | None
     birth: str | None

@@ -1,19 +1,19 @@
 from src.exceptions.base_exceptions import ValidationException
-from src.models.base_model import BaseModel
+from src.models.base_model import DeclarativeBaseModel
 from src.schemas.base_schemas import BaseSchema
 
 
-def isValidModel(self=None, model=None):
+def is_valid_model(self=None, model=None):
     if not isinstance(model, type):
         model = model.__class__
-    if not model or not issubclass(model, BaseModel):
+    if not model or not issubclass(model, DeclarativeBaseModel):
         raise ValidationException(
             f'{self.__class__.__name__}',
             f"model: {model.__name__} - is not subclass of BaseModel or model is empty"
         )
 
 
-def isValidSchema(self=None, model=None, schema=None):
+def is_valid_schema(self=None, model=None, schema=None):
     if not isinstance(schema, type):
         schema = schema.__class__
     if not schema or not issubclass(schema, BaseSchema):
@@ -31,8 +31,7 @@ def isValidSchema(self=None, model=None, schema=None):
             )
 
 
-
-def hasAttrOrder(model, order):
+def has_attr_order(model, order):
     if order is not None:
         if hasattr(model, order):
             return
