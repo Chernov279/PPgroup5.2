@@ -118,6 +118,16 @@ class SQLAlchemyRepository(AbstractRepository):
             return result.scalar()
         return result.first()
 
+    async def get_count_by_filters(
+            self,
+            **filters
+    ) -> int:
+
+        isValidFilters(self.model, filters)
+
+        stmt = select(func.count()).select_from(self.model).filter_by(**filters)
+        return await self.db_session.execute(stmt)
+
     async def create(
             self,
             schema,
@@ -157,6 +167,26 @@ class SQLAlchemyRepository(AbstractRepository):
         isValidFilters(self.model, filters)
 
         data = schema.model_dump()
+
+        query = select(self.model).filter_by(**filters)
+        result = await self.db_session.execute(query)
+        instance = result.scalars().first()
+
+        if instance:
+            for key, value in data.items():
+                setattr(instance, key, value)
+
+            return instance
+        else:
+            raise UserNotFoundException()
+
+    async def update_by_dict(
+            self,
+            data: dict,
+            **filters
+    ) -> DeclarativeBaseModel:
+
+        isValidFilters(self.model, filters)
 
         query = select(self.model).filter_by(**filters)
         result = await self.db_session.execute(query)

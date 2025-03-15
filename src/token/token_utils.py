@@ -200,13 +200,21 @@ def verify_jwt_token(token: str) -> dict | None:
         raise HTTPException(status_code=401, detail="Token not decoded")
 
 
-def get_sub_from_token(token) -> Optional[int]:
-    payload = verify_jwt_token(token)
-    user_id = payload.get("sub", None)
-    if not user_id:
-        raise InvalidTokenUserException()
-    if isinstance(user_id, str):
-        return int(user_id)
-    elif isinstance(user_id, int):
-        return user_id
-    raise HTTPException(status_code=415, detail="sub from token is unsupported type")
+def get_sub_from_token(token, raise_exception: bool = True) -> Optional[int]:
+    try:
+        payload = verify_jwt_token(token)
+        user_id = payload.get("sub", None)
+        if not user_id:
+            raise InvalidTokenUserException()
+        if isinstance(user_id, str):
+            return int(user_id)
+        elif isinstance(user_id, int):
+            return user_id
+        raise HTTPException(status_code=415, detail="sub from token is unsupported type")
+    except Exception as e:
+        if raise_exception:
+            raise e
+        else:
+            return None
+
+

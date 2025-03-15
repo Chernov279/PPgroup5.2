@@ -30,6 +30,11 @@ class RatingRepository(SQLAlchemyRepository):
             user_id=user_id,
         )
 
+    async def get_count_ratings(self):
+        return await self.get_count_by_filters(
+
+        )
+
     async def create_rating(self, rating_in, selected_columns):
         return await self.create(
             schema=rating_in,

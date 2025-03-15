@@ -49,6 +49,12 @@ class UserRepository(SQLAlchemyRepository):
             pk_values=[user_id,],
         )
 
+    async def update_user_activity(self, user_id: int, **kwargs):
+        return await self.update_by_dict(
+            kwargs,
+            id=user_id
+        )
+
     async def delete_user(self, user_id):
         return await self.delete_by_pk(
             pk_values=[user_id,]
