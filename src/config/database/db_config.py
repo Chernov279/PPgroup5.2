@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import ValidationError
+from pydantic import ValidationError, ConfigDict
 from pydantic_settings import BaseSettings
 from pathlib import Path
 
@@ -46,9 +46,13 @@ class ConfigDataBase(BaseSettings):
         )
 
     # получение данных из файла .env
-    class Config:
-        env_file = str(Path(__file__).parent.parent.parent.parent / ".env")
-        extra = "ignore"
+    model_config = {
+        "env_file": str(Path(__file__).parent.parent.parent.parent / ".env"),
+        "extra": "ignore"
+    }
+    # class Config:
+    #     env_file = str(Path(__file__).parent.parent.parent.parent / ".env")
+    #     extra = "ignore"
 
 
 try:

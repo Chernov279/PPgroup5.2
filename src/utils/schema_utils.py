@@ -8,7 +8,7 @@ def add_internal_params(schema, cls_internal, raise_exception: bool = True, **pa
     if not isinstance(cls_internal, type):
         cls_internal = cls_internal.__class__
 
-    new_model = cls_internal.construct()
+    new_model = cls_internal.model_construct()
 
     if schema is None:
         pass

@@ -15,9 +15,10 @@ class TokenSettings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int
 
     # получение данных из файла .env
-    class Config:
-        env_file = str(Path(__file__).parent.parent.parent / ".env")
-        extra = "ignore"
+    model_config = {
+        "env_file": str(Path(__file__).parent.parent.parent / ".env"),
+        "extra": "ignore"
+    }
 
 
 try:

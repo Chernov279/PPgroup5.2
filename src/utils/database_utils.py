@@ -7,7 +7,7 @@ def valid_limit(limit):
     if limit < 0:
         raise AppException(detail="limit less than 0")
     if limit > 2 ** 32 - 1:
-        raise AppException(detail="limit more than 2^32, not int32")
+        raise AppException(detail="limit more than 2**32, not int32")
 
 
 def valid_offset(offset):
@@ -16,4 +16,4 @@ def valid_offset(offset):
     if offset < 0:
         raise AppException(detail="offset less than 0")
     if offset > 2 ** 32 - 1:
-        raise AppException(detail="offset more than 2^32, not int32")
+        raise AppException(detail="offset more than 2**32, not int32")
