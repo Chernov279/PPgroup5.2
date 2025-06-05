@@ -35,33 +35,31 @@ class UserService:
     ):
         token_user_id = get_sub_from_token(token=token, raise_exception=False)
 
-        async with user_uow as uow:
-            users = await uow.get_all_users_uow(
-                **multi_get_params.model_dump(),
-                selected_columns=UserShortOut.get_selected_columns()
-            )
+        users = await user_uow.get_all_users_uow(
+            **multi_get_params.model_dump(),
+            selected_columns=UserShortOut.get_selected_columns()
+        )
 
-            if token_user_id is not None:
-                await UserActivityService(user_repository=uow.repository).update_user_activity_service(token_user_id)
+        if token_user_id is not None:
+            await UserActivityService(user_repository=user_uow.repository).update_user_activity_service(token_user_id)
         return users
 
     @staticmethod
     async def get_user_by_id_service(
             token: Annotated[str, Depends(get_optional_token)],
-            user_id: UserPrimaryKey = Depends(),
+            userPK: UserPrimaryKey = Depends(),
             user_uow: UserUnitOfWork = Depends(get_user_uow)
     ):
         token_user_id = get_sub_from_token(token=token, raise_exception=False)
         selected_columns = UserDetailOut.get_selected_columns()
+        user_id = userPK.id
 
-        async with user_uow as uow:
-            user = await uow.get_user_by_id_uow(user_id, selected_columns)
-            if not user:
-                raise UserNotFoundException(user_id)
-            if token_user_id is not None:
-                await UserActivityService(user_repository=uow.repository).update_user_activity_service(token_user_id)
-            await uow.commit()
-            return user
+        user = await user_uow.get_user_by_id_uow(user_id, selected_columns)
+        if not user:
+            raise UserNotFoundException(user_id)
+        if token_user_id is not None:
+            await UserActivityService(user_repository=user_uow.repository).update_user_activity_service(token_user_id)
+        return user
 
     @staticmethod
     async def get_user_me_service(
@@ -71,25 +69,22 @@ class UserService:
         token_user_id = get_sub_from_token(token)
         selected_columns = UserDetailOut.get_selected_columns()
 
-        async with user_uow as uow:
-            user = await uow.get_user_by_id_uow(token_user_id, selected_columns)
-            if not user:
-                raise UserNotFoundException(token_user_id)
-            if token_user_id is not None:
-                await UserActivityService(user_repository=uow.repository).update_user_activity_service(token_user_id)
-            await uow.commit()
-            return user
+        user = await user_uow.get_user_by_id_uow(token_user_id, selected_columns)
+        if not user:
+            raise UserNotFoundException(token_user_id)
+        if token_user_id is not None:
+            await UserActivityService(user_repository=user_uow.repository).update_user_activity_service(token_user_id)
+        return user
 
     @staticmethod
     async def create_user_service(
             user_in: UserCreateIn,
             user_uow: UserUnitOfWork = Depends(get_user_uow)
     ):
-        async with user_uow as uow:
-            user = await uow.create_user_uow(user_in)
-            if not user:
-                raise UserFailedCreateException()
-            return user
+        user = await user_uow.create_user_uow(user_in)
+        if not user:
+            raise UserFailedCreateException()
+        return user
 
     @staticmethod
     async def update_user_service(
@@ -99,11 +94,11 @@ class UserService:
     ):
         user_id = get_sub_from_token(token)
         delete_none_params(user_in)
-        async with user_uow as uow:
-            user = await uow.update_user_uow(user_in, user_id)
-            if not user:
-                raise UserFailedUpdateException()
-            return user
+
+        user = await user_uow.update_user_uow(user_in, user_id)
+        if not user:
+            raise UserFailedUpdateException()
+        return user
 
     @staticmethod
     async def delete_user_service(
@@ -112,8 +107,7 @@ class UserService:
     ):
         user_id = get_sub_from_token(token)
 
-        async with user_uow as uow:
-            is_deleted = await uow.delete_user_uow(user_id)
-            if is_deleted:
-                raise UserDeletedSuccessException(user_id)
-            raise UserFailedDeleteException()
+        is_deleted = await user_uow.delete_user_uow(user_id)
+        if is_deleted:
+            raise UserDeletedSuccessException(user_id)
+        raise UserFailedDeleteException()
