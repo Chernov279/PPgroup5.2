@@ -61,6 +61,18 @@ class RatingUnitOfWork(SqlAlchemyUnitOfWork):
         except Exception as e:
             raise e
 
+    async def get_avg_rating_by_route_uow(
+            self,
+            route_id: int,
+    ):
+        try:
+            avg_rating = await self.repository.get_avg_rating_by_route(
+                route_id=route_id,
+            )
+            return avg_rating
+        except Exception as e:
+            raise e
+
     async def create_rating_uow(
             self,
             rating_in,

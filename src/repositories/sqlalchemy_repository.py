@@ -128,6 +128,21 @@ class SQLAlchemyRepository(AbstractRepository):
         stmt = select(func.count()).select_from(self.model).filter_by(**filters)
         return await self.db_session.execute(stmt)
 
+    async def get_avg_by_filters(
+            self,
+            column_name: str,
+            **filters
+    ) -> float:
+        """
+        Возвращает среднее значение указанного столбца с учётом фильтров.
+        """
+        has_attr_order(self.model, column_name)
+        isValidFilters(self.model, filters)
+
+        stmt = select(func.avg(getattr(self.model, column_name))).select_from(self.model).filter_by(**filters)
+        result = await self.db_session.execute(stmt)
+        return result.scalar() or None
+
     async def create(
             self,
             schema,

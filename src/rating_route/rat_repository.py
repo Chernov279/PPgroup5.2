@@ -35,6 +35,15 @@ class RatingRepository(SQLAlchemyRepository):
 
         )
 
+    async def get_avg_rating_by_route(
+            self,
+            route_id
+    ):
+        return await self.get_avg_by_filters(
+            column_name="value",
+            route_id=route_id
+        )
+
     async def create_rating(self, rating_in, selected_columns):
         return await self.create(
             schema=rating_in,

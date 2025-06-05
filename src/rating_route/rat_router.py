@@ -2,7 +2,7 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Depends
 
-from .rat_schemas import RatingShortOut
+from .rat_schemas import RatingShortOut, RatingAvgValue
 from .rat_service import RatingService
 
 rating = APIRouter(prefix="/rating", tags=["Rating of routes"])
@@ -32,6 +32,13 @@ async def get_rating_by_pk_endpoint(
 @rating.get("/{route_id}", response_model=RatingShortOut)
 async def get_my_rating_by_route_endpoint(
         rating_out: Annotated[RatingShortOut, Depends(RatingService.get_my_rating_by_route)]
+):
+    return rating_out
+
+
+@rating.get("/avg/{route_id}", response_model=RatingAvgValue)
+async def get_avg_rating_by_route_endpoint(
+        rating_out: Annotated[RatingAvgValue, Depends(RatingService.get_avg_rating_by_route)]
 ):
     return rating_out
 

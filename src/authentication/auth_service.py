@@ -30,10 +30,10 @@ class AuthService:
             name=auth_in.name,
             hashed_password=hashed_password,
         )
-        async with auth_uow as uow:
-            user = await uow.register_user_uow(
-                auth_in=auth_internal
-            )
+
+        user = await auth_uow.register_user_uow(
+            auth_in=auth_internal
+        )
 
         user_id = user.id
         response = success_login_user(user_id=user_id)
@@ -52,11 +52,10 @@ class AuthService:
 
         selected_columns = User.get_columns_by_names("id", "hashed_password")
 
-        async with auth_uow as uow:
-            user_data = await uow.login_user_uow(
-                email=auth_in.email,
-                selected_columns=selected_columns
-            )
+        user_data = await auth_uow.login_user_uow(
+            email=auth_in.email,
+            selected_columns=selected_columns
+        )
         if not user_data:
             raise InvalidCredentialsException()
 

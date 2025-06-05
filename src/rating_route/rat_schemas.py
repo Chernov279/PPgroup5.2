@@ -34,10 +34,8 @@ class RatingCreateInInternal(RatingCreateIn):
     user_id: int
 
 
-class RatingUpdateIn(RatingBaseSchema):
-    route_id: int
-    value: int | None
-    comment: Optional[str] = None
+class RatingUpdateIn(RatingCreateIn):
+    pass
 
 
 class RatingUpdateInternal(RatingUpdateIn):
@@ -47,3 +45,7 @@ class RatingUpdateInternal(RatingUpdateIn):
 class RatingPKs(RatingBaseSchema):
     user_id: int = Query(..., description="User ID")
     route_id: int = Query(..., description="Route ID")
+
+
+class RatingAvgValue(RatingBaseSchema):
+    value: Optional[float]

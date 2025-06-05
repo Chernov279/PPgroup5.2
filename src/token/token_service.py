@@ -3,16 +3,14 @@ from typing import Annotated
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
-from redis import Redis
 
-from .token_dependencies import get_token_uow, get_token_cache
+from .token_dependencies import get_token_uow
 from .token_uow import TokenUnitOfWork
 from .token_schemas import AccessTokenOut
 from .token_utils import (
     create_refresh_token,
     set_refresh_token_cookie,
     create_access_token,
-    create_access_token_by_refresh,
     get_sub_from_token
 )
 
@@ -21,6 +19,7 @@ from ..authentication.utils.security import verify_password
 from ..exceptions.auth_exceptions import InvalidEmailException, InvalidCredentialsException
 from ..exceptions.token_exceptions import TokenMissingException, InvalidTokenUserException
 from ..models.models import User
+from ..redis.redis_dependencies import get_token_cache
 from ..redis.token_cache import TokenCache
 
 

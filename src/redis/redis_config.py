@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import ValidationError, ConfigDict
 from pydantic_settings import BaseSettings
@@ -9,10 +9,11 @@ class ConfigRedis(BaseSettings):
 
     REDIS_HOST: str = "localhost"
     REDIS_PORT: str = "6379"
-    REDIS_DB: str = "0"
+    REDIS_DBS: List[str] = ["0"]
     REDIS_PASSWORD: Optional[str] = None
 
-    REDIS_URL: Optional[str] = None
+    REDIS_URL0: Optional[str] = None
+    REDIS_URL1: Optional[str] = None
 
     # получение данных из файла .env
     model_config = {
@@ -23,23 +24,29 @@ class ConfigRedis(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        if self.REDIS_URL:
+        if self.REDIS_URL0:
             return
 
         missing_fields = [
             field for field in [
                 "REDIS_HOST",
                 "REDIS_PORT",
-                "REDIS_DB",
+                "REDIS_DBS",
             ]
             if not getattr(self, field, None)
         ]
         if missing_fields:
             raise ValueError(f"Следующие параметры не переданы или пустые: {', '.join(missing_fields)}")
         if self.REDIS_PASSWORD:
-            self.REDIS_URL = f"redis://:{settings_redis.REDIS_PASSWORD}@{settings_redis.REDIS_HOST}:{settings_redis.REDIS_PORT}/{settings_redis.REDIS_DB}"
+            self.REDIS_URL0 = f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DBS[0]}"
         else:
-            self.REDIS_URL = f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+            self.REDIS_URL0 = f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DBS[0]}"
+
+        if len(self.REDIS_DBS)>1:
+            if self.REDIS_PASSWORD:
+                self.REDIS_URL1 = f"redis://:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DBS[1]}"
+            else:
+                self.REDIS_URL1 = f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DBS[1]}"
 
 
 try:

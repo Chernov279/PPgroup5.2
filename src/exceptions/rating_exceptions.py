@@ -14,11 +14,11 @@ class RatingAlreadyExistsException(AppException):
 
 
 class RatingFailedActionException(AppException):
-    def __init__(self, action: str = None):
+    def __init__(self, action: str = None, status_code: int = 400):
         detail = f"Failed to {action}." if action is not None else f"Failed the rating action."
-        super().__init__(status_code=400, detail=detail)
+        super().__init__(status_code=status_code, detail=detail)
 
 
 class RatingFailedDeleteException(RatingFailedActionException):
     def __init__(self):
-        super().__init__("delete rating")
+        super().__init__(action="delete rating")
