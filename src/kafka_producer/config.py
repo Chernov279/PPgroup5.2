@@ -8,22 +8,19 @@ class KafkaSettings(BaseSettings):
     # получение чувствительных данных из корневой папки
 
     KAFKA_BOOTSTRAP_SERVERS: str
-    KAFKA_TOPIC: str = "user-events"
+    KAFKA_DEFAULT_TOPIC: str = "default_topic"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-
-        # missing_fields = [
-        #     field for field in [
-        #         "PROJECT_NAME",
-        #         "DEBUG",
-        #         "VERSION"
-        #     ]
-        #     if not getattr(self, field, None)
-        # ]
-        # if missing_fields:
-        #     raise ValueError(f"Следующие параметры не переданы или пустые: {', '.join(missing_fields)}")
+        missing_fields = [
+            field for field in [
+                "KAFKA_BOOTSTRAP_SERVERS",
+            ]
+            if not getattr(self, field, None)
+        ]
+        if missing_fields:
+            raise ValueError(f"Следующие параметры не переданы или пустые: {', '.join(missing_fields)}")
 
     # получение данных из файла .env
     model_config = {

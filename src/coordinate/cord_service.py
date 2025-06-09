@@ -17,7 +17,7 @@ from ..exceptions.coordinate_exceptions import (
 )
 from ..exceptions.route_exceptions import RouteNotFoundException
 from ..models.models import Coordinate, Route
-from ..token.token_utils import get_sub_from_token
+from ..token_app.token_utils import get_sub_from_token
 from ..utils.database_utils import valid_limit, valid_offset
 
 

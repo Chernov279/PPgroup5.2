@@ -4,7 +4,7 @@ from fastapi import Depends, APIRouter
 from fastapi.responses import JSONResponse
 
 from .auth_service import AuthService
-from ..token.token_schemas import AccessTokenOut
+from ..token_app.token_schemas import AccessTokenOut
 
 auth = APIRouter(prefix="/auth", tags=["auth"])
 

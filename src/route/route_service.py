@@ -13,7 +13,7 @@ from ..exceptions.route_exceptions import (
 )
 from ..models.models import Route
 from ..schemas.database_params_schemas import MultiGetParams
-from ..token.token_utils import get_sub_from_token
+from ..token_app.token_utils import get_sub_from_token
 from ..utils.schema_utils import add_internal_params, delete_none_params
 
 from .route_schemas import (

@@ -12,7 +12,7 @@ from src.rating_route.rat_uow import RatingUnitOfWork
 from src.redis.avg_rat_cache import AvgRatingCache
 from src.redis.redis_dependencies import get_avg_rat_cache
 from src.schemas.database_params_schemas import MultiGetParams
-from src.token.token_utils import get_sub_from_token
+from src.token_app.token_utils import get_sub_from_token
 from src.utils.schema_utils import add_internal_params
 
 

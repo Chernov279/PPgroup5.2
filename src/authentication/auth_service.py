@@ -1,16 +1,18 @@
 from fastapi import Depends
 from fastapi.responses import JSONResponse
+import time
 
 from .auth_dependencies import get_auth_uow
 from .auth_schemas import AuthRegisterIn, AuthRegisterInternal, AuthLoginIn
 from .auth_uow import AuthUnitOfWork
+from .kafka_producer import auth_kaffka
 from .utils.auth_utils import is_valid_create_user_data, success_login_user
 from .utils.security import hash_password, verify_password
 
 from ..exceptions.auth_exceptions import InvalidCredentialsException
 from ..exceptions.base_exceptions import AppException
 from ..models.models import User
-from ..token.token_utils import delete_refresh_token_cookie
+from ..token_app.token_utils import delete_refresh_token_cookie
 
 
 class AuthService:
@@ -68,6 +70,9 @@ class AuthService:
 
         response = success_login_user(user_id=user_id)
 
+        await auth_kaffka.send_user_registered({
+            "event_name": "user_login",
+        })
         return response
 
     @staticmethod
@@ -76,7 +81,7 @@ class AuthService:
         Выход пользователя из системы.
 
         ### Логика:
-        1. Удаляет refresh токен из cookies через `AuthTokenUOW`.
+        1. Удаляет refresh токен из cookies.
         2. Возвращает JSON-ответ с сообщением об успешном выходе.
 
         ### Возвращаемые данные:

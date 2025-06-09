@@ -1,9 +1,12 @@
+import asyncio
 import uvicorn
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import settings_project
-from .routers import routers
+from src.config import settings_project
+from src.kafka_producer.producer import kafka_producer
+from src.routers import routers
 
 
 def get_application() -> FastAPI:
@@ -26,6 +29,16 @@ def get_application() -> FastAPI:
 
 app = get_application()
 
+
+@app.on_event("startup")
+async def startup_event():
+    await kafka_producer.startup_connection()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    if kafka_producer:
+        await kafka_producer.stop()
 
 if __name__ == "__main__":
     uvicorn.run("src.main:app", host="0.0.0.0", reload=True)

@@ -6,6 +6,8 @@ from src.redis.redis_config import settings_redis
 redis0 = Redis.from_url(settings_redis.REDIS_URL0, decode_responses=True)
 redis1 = Redis.from_url(settings_redis.REDIS_URL1, decode_responses=True)
 
+redis_dbs = (redis0, redis1)
+
 
 @asynccontextmanager
 async def get_redis(redis):
