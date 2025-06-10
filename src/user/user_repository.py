@@ -11,9 +11,9 @@ class UserRepository(SQLAlchemyRepository):
         Получить пользователя по ID.
         """
         return await self.get_single(
-            id=user_id,
             selected_columns=selected_columns,
-            scalar=scalar
+            scalar=scalar,
+            id=user_id,
         )
 
     async def get_user_by_email(self, email, selected_columns):

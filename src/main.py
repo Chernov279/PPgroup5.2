@@ -1,12 +1,13 @@
 import asyncio
+
 import uvicorn
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import settings_project
-from src.kafka_producer.producer import kafka_producer
-from src.routers import routers
+from src.kafka.producer import kafka_producer
+from src.routers import routers, kafka_consumers
 
 
 def get_application() -> FastAPI:
@@ -27,12 +28,18 @@ def get_application() -> FastAPI:
     return application
 
 
+async def get_kafka_consumers():
+    for consumer in kafka_consumers:
+        await consumer.start()
+        asyncio.create_task(consumer.consume())
+
 app = get_application()
 
 
 @app.on_event("startup")
 async def startup_event():
     await kafka_producer.startup_connection()
+    await get_kafka_consumers()
 
 
 @app.on_event("shutdown")

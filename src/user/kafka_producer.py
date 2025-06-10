@@ -12,7 +12,4 @@ class KafkaProducerService(KafkaProducer):
         await self.send(self.topic, user_data)
 
 
-auth_kafka_producer = KafkaProducerService()
-
-
-
+user_kafka_producer = KafkaProducerService()

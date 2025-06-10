@@ -5,7 +5,7 @@ from .rating_route.rat_router import rating
 from .route.route_router import route
 from .token_app.token_router import token
 from .user.user_router import user
-
+from .user_activity.kafka_consumer import user_activity_kafka_consumer
 
 routers = [
     user,
@@ -15,4 +15,8 @@ routers = [
     rating,
     coordinate,
     healthcheck
+]
+
+kafka_consumers = [
+    user_activity_kafka_consumer
 ]

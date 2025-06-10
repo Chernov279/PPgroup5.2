@@ -4,7 +4,7 @@ from aiokafka import AIOKafkaProducer
 import asyncio
 import json
 
-from src.kafka_producer.config import settings_kafka
+from src.kafka.config import settings_kafka
 
 
 class KafkaProducer:

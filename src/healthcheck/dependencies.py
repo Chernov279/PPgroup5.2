@@ -2,7 +2,7 @@ from sqlalchemy import text
 from aiokafka.errors import KafkaConnectionError
 
 from src.config import db_helper
-from src.kafka_producer.producer import kafka_producer
+from src.kafka.producer import kafka_producer
 from src.models.base_model import DeclarativeBaseModel
 from src.redis.redis_helper import redis_dbs
 

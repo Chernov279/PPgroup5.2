@@ -5,7 +5,7 @@ import time
 from .auth_dependencies import get_auth_uow
 from .auth_schemas import AuthRegisterIn, AuthRegisterInternal, AuthLoginIn
 from .auth_uow import AuthUnitOfWork
-from .kafka_producer import auth_kaffka
+from .kafka_producer import auth_kafka_producer
 from .utils.auth_utils import is_valid_create_user_data, success_login_user
 from .utils.security import hash_password, verify_password
 
@@ -69,9 +69,10 @@ class AuthService:
             raise InvalidCredentialsException()
 
         response = success_login_user(user_id=user_id)
-
-        await auth_kaffka.send_user_registered({
+        print(user_id, "login_user_service")
+        await auth_kafka_producer.send_data({
             "event_name": "user_login",
+            "user_id": user_id
         })
         return response
 
