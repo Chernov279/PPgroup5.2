@@ -3,48 +3,52 @@ from typing import List, Annotated
 from fastapi import Depends, APIRouter
 
 from .user_service import UserService
-from .user_schemas import UserDetailOut, UserShortOut
+from .user_schemas import UserDetailOut, UserShortOut, UserUpdateIn, UserPrimaryKey
+from ..config.token_config import oauth2_scheme
+from ..schemas.database_params_schemas import MultiGetParams
+from ..token_app.token_dependencies import get_optional_token
 
 user = APIRouter(prefix="/users", tags=["User"])
 
 
 @user.get("/", response_model=List[UserShortOut])
 async def get_all_users_route(
-        users: Annotated[List[UserShortOut], Depends(UserService.get_all_users_service)]
+    token: Annotated[str, Depends(get_optional_token)],
+    multi_get_params: MultiGetParams = Depends(),
+    user_service: UserService = Depends()
 ):
-    return users
+    return await user_service.get_all_users(token, multi_get_params)
 
 
 @user.get("/me", response_model=UserDetailOut)
 async def get_user_me_route(
-        user_out: Annotated[UserDetailOut, Depends(UserService.get_user_me_service)]
+        token: Annotated[str, Depends(oauth2_scheme)],
+        user_service: UserService = Depends()
 ):
-    return user_out
+    return await user_service.get_user_me(token)
 
 
 @user.get("/{user_id}", response_model=UserDetailOut)
 async def get_user_route(
-        user_out: Annotated[UserDetailOut, Depends(UserService.get_user_by_id_service)]
+        token: Annotated[str, Depends(get_optional_token)],
+        userPK: UserPrimaryKey = Depends(),
+        user_service: UserService = Depends()
 ):
-    return user_out
-
-
-# @user.post("/", response_model=UserDetailOut)
-# async def create_user_route(
-#         user_out: Annotated[UserDetailOut, Depends(UserService.create_user_service)]
-# ):
-#     return user_out
+    return await user_service.get_user_by_id(token, userPK)
 
 
 @user.put("/", response_model=UserDetailOut)
 async def update_user_route(
-        user_out: Annotated[UserDetailOut, Depends(UserService.update_user_service)]
+        user_in: UserUpdateIn,
+        token: Annotated[str, Depends(oauth2_scheme)],
+        user_service: UserService = Depends(),
 ):
-    return user_out
+    return await user_service.update_user(user_in, token)
 
 
 @user.delete("/")
 async def delete_user_route(
-        user_out: Annotated[UserDetailOut, Depends(UserService.delete_user_service)]
+        token: Annotated[str, Depends(oauth2_scheme)],
+        user_service: UserService = Depends()
 ):
-    return user_out
+    return user_service.delete_user(token)
