@@ -1,8 +1,7 @@
-
 import logging.config
 from typing import Dict, Any
 
-from src.utils.logging_utils import RequestIdFilter
+from src.utils.context_utils import RequestIdFilter
 
 DEFAULT_LEVEL = "INFO"
 

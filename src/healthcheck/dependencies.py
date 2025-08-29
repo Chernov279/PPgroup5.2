@@ -5,8 +5,8 @@ from sqlalchemy import text
 from aiokafka.errors import KafkaConnectionError
 
 from src.config import db_helper
-from src.kafka.consumer import BaseKafkaConsumer
-from src.kafka.producer import kafka_producer
+from src.kafka.consumers.base_consumer import BaseKafkaConsumer
+from src.kafka.producers.producer import kafka_producer
 from src.models.base_model import DeclarativeBaseModel
 from src.redis.redis_helper import redis_dbs
 

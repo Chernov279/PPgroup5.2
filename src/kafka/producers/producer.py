@@ -92,13 +92,16 @@ class BaseKafkaProducer:
         if not self._started or self._producer is None:
             await self.start()
 
-        logger.debug("Kafka producer sending topic=%s, preview=%s", topic, _preview(message))
+        from src.kafka.producers.producer_message_enricher import MessageEnricher
+        enriched_message = MessageEnricher.enrich(message)
+
+        logger.debug("Kafka producer sending topic=%s, preview=%s", topic, _preview(enriched_message))
         logger.info("Kafka producer send topic=%s", topic)
 
         if wait:
-            return await self._send_and_wait(topic, message)
+            return await self._send_and_wait(topic, enriched_message)
         else:
-            task = asyncio.create_task(self._send_and_wait(topic, message))
+            task = asyncio.create_task(self._send_and_wait(topic, enriched_message))
             task.add_done_callback(self._send_done_callback)
             return None
 

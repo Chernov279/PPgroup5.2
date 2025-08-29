@@ -8,8 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.config import settings_project
 from src.config.logging_config import configure_logging
-from src.kafka.consumers import kafka_consumers
-from src.kafka.producer import kafka_producer
+from src.kafka.consumers.consumers import kafka_consumers
+from src.kafka.producers.producer import kafka_producer
 from src.middlewares.request_id_mw import RequestIdMiddleware
 from src.routers import routers
 

@@ -1,7 +1,7 @@
-from src.kafka.producer import KafkaProducer
+from src.kafka.producers.producer import BaseKafkaProducer
 
 
-class KafkaProducerService(KafkaProducer):
+class KafkaProducerService(BaseKafkaProducer):
     KAFKA_TOPIC = "user_active"
 
     def __init__(self, topic: str = KAFKA_TOPIC):
@@ -11,5 +11,3 @@ class KafkaProducerService(KafkaProducer):
     async def send_data(self, user_data: dict):
         await self.send(self.topic, user_data)
 
-
-user_kafka_producer = KafkaProducerService()

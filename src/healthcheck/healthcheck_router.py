@@ -2,7 +2,7 @@ from asyncio import gather
 
 from fastapi import APIRouter, status
 from src.healthcheck.dependencies import check_kafka, check_redis, check_postgres
-from src.kafka.consumers import kafka_consumers
+from src.kafka.consumers.consumers import kafka_consumers
 
 healthcheck = APIRouter(prefix="/health", tags=["Healthcheck"])
 
