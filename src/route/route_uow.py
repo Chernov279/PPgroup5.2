@@ -136,11 +136,12 @@ class RouteUnitOfWork(SqlAlchemyUnitOfWork):
     async def update_route_uow(
             self,
             route_in,
+            route_id
     ):
         try:
             route = await self.repository.update_route(
                 route_in=route_in,
-                pk_values=[route_in.id,],
+                pk_values=[route_id,],
             )
             await self.db_session.commit()
             return route

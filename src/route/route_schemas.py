@@ -26,7 +26,6 @@ class RouteCreateInternal(RouteCreateIn):
 
 
 class RouteUpdateIn(RouteBaseSchema):
-    id: int
     distance: float | None = None
     users_travel_time: int | None = None
     users_transport: str | None = None
