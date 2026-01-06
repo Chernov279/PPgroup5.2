@@ -1,264 +1,333 @@
-from typing import List, Optional, Any, Tuple, Union
-from sqlalchemy import func, select, delete
+from typing import List, Optional, Any, TypeVar, Dict
+from sqlalchemy import func, select, delete, BinaryExpression, insert, update
 
 from .base_repository import AbstractRepository
-from ..exceptions.user_exceptions import UserNotFoundException
+from ..exceptions.repository_exceptions import NotFoundException
 from ..models.base_model import DeclarativeBaseModel
-from ..utils.base_utils import is_valid_model, has_attr_order, is_valid_schema, isValidFilters
+from ..schemas.base_schemas import BaseSchema
+
+T = TypeVar('T', bound=DeclarativeBaseModel)
+S = TypeVar('S', bound=BaseSchema)
 
 
-# TODO add method get_by_pk
-# TODO add method get_with_join
 class SQLAlchemyRepository(AbstractRepository):
-    def __init__(self, db_session, model: type(DeclarativeBaseModel)):
+    def __init__(self, db_session, model: type[T]):
         self.db_session = db_session
-        is_valid_model(self, model)
         self.model = model
+
+
+    async def get_by_pk(self, id: int) -> Optional[T]:
+        """Возвращает объект по PK"""
+        result = await self.db_session.get(self.model, id)
+        return result
+
 
     async def get_single(
             self,
             selected_columns: Optional[List[Any]] = None,
-            limit: int = 1,
+            options: Optional[List] = None,
             scalar: bool = False,
-            **filters
-    ):
+            *filters : BinaryExpression
+    ) -> Optional[Any]:
+        """
+        Получить одну запись.
 
-        isValidFilters(self.model, filters)
-        row = (
-            await self.db_session.execute(
-                select(*selected_columns).select_from(self.model).filter_by(**filters).limit(limit))
-            if selected_columns else
-            await self.db_session.execute(select(self.model).filter_by(**filters).limit(limit))
-        )
+        Args:
+            selected_columns: Список колонок для выбора [User.id, User.email]
+            options: SQLAlchemy options для eager loading
+            scalar: Получение всего объекта или первого столбца
+            *filters: Условия WHERE (User.age > 18, User.name == "John")
+
+        Returns:
+            Row-объект если selected_columns указан, иначе объект модели
+        """
+        if selected_columns:
+            stmt = select(*selected_columns).select_from(self.model).where(*filters)
+        else:
+            stmt = select(self.model).where(*filters)
+
+        if options:
+            stmt = stmt.options(*options)
+        stmt = await self.db_session.execute(stmt)
         if scalar:
-            return row.scalar()
-        return row.first()
+            return stmt.scalar_one_or_none()
+        return stmt.first()
+
 
     async def get_multi(
             self,
-            order: str = "id",
-            limit: int = 100,
-            offset: int = 0,
             selected_columns: Optional[List[Any]] = None,
-    ):
-        has_attr_order(self.model, order)
+            limit: int = 30,
+            offset: int = 0,
+            order: Optional[Any] = None,
+            options: Optional[List] = None,
+            scalar: bool = False,
+            *filters : BinaryExpression
+    ) -> List[Any]:
+        """
+        Получить несколько записей с пагинацией.
 
+        Args:
+            *filters: Условия WHERE
+            selected_columns: Список колонок
+            limit: Максимальное количество записей
+            offset: Смещение
+            order: Поле для сортировки (User.email)
+            options: Options для eager loading
+            scalar: Получение всех моделей или первых столбцов
+
+        Returns:
+            Список Row-объектов если selected_columns указан, иначе список моделей
+        """
         stmt_select = (
             select(*selected_columns).select_from(self.model) if selected_columns else select(self.model))
         stmt = (
             stmt_select
-            .order_by(getattr(self.model, order))
+            .order_by(order)
             .limit(limit)
             .offset(offset)
+            .where(*filters)
         )
-        result = await self.db_session.execute(stmt)
-        return result.all()
+        if options:
+            stmt = stmt.options(*options)
+        stmt = await self.db_session.execute(stmt)
 
-    async def get_multi_with_filters(
-            self,
-            order: str = "id",
-            limit: int = 100,
-            offset: int = 0,
-            selected_columns: Optional[List[Any]] = None,
-            **filters
-    ) -> List[DeclarativeBaseModel]:
+        if scalar:
+            return stmt.scalars()
+        return stmt.all()
 
-        has_attr_order(self.model, order)
-        isValidFilters(self.model, filters)
-
-        stmt_select = select(*selected_columns).select_from(self.model) if selected_columns else select(self.model)
-        stmt = (
-            stmt_select
-            .filter_by(**filters)
-            .order_by(getattr(self.model, order))
-            .limit(limit)
-            .offset(offset)
-        )
-        result = await self.db_session.execute(stmt)
-        return result.all()
 
     async def get_max(
             self,
-            column_name: str,
-            scalar: bool = True,
-            **filters
-    ):
-        has_attr_order(self.model, column_name)
+            column: Any,
+            *filters
+    ) -> Optional[int]:
+        """
+        Возвращает максимальное значение указанного столбца с учетом фильтров.
 
-        stmt = select(func.max(getattr(self.model, column_name)))
+        Args:
+            column: Колонка модели для вычисления максимума.
+            *filters: Условия WHERE для фильтрации записей.
 
-        for key, value in filters.items():
-            stmt = stmt.where(getattr(self.model, key) == value)
+        Returns:
+            Максимальное значение или None, если нет записей.
+        """
+        stmt = select(func.max(column)).select_from(self.model).where(*filters)
+        stmt = await self.db_session.execute(stmt)
 
-        result = await self.db_session.execute(stmt)
-        if scalar:
-            return result.scalar_one_or_none()
-        return result.first()
+        return stmt.scalar_one_or_none()
+
 
     async def get_min(
             self,
-            column_name: str,
-            limit=1,
-            selected_columns: Optional[List[Any]] = None,
-            scalar: bool = False,
-            **filters
-    ):
-        has_attr_order(self.model, column_name)
+            column: Any,
+            *filters
+    ) -> Optional[int]:
+        """
+        Возвращает минимальное значение указанного столбца с учетом фильтров.
 
-        subquery = select(
-            (func.min(getattr(self.model, column_name))).scalar_subquery()
-        )
-        stmt_select = (select(*selected_columns).select_from(self.model if selected_columns else select(self.model)))
-        stmt = stmt_select.where(getattr(self.model, column_name) == subquery)
-        for key, value in filters.items():
-            stmt = stmt.where(getattr(self.model, key) == value)
-        stmt = stmt.limit(limit)
-        result = await self.db_session.execute(stmt)
-        if scalar:
-            return result.scalar()
-        return result.first()
+        Args:
+            column: Колонка модели для вычисления минимума.
+            *filters: Условия WHERE для фильтрации записей.
 
-    async def get_count_by_filters(
+        Returns:
+            Минимальное значение или None, если нет записей.
+        """
+        stmt = select(func.min(column)).select_from(self.model).where(*filters)
+        stmt = await self.db_session.execute(stmt)
+
+        return stmt.scalar_one_or_none()
+
+
+    async def get_count(
             self,
-            **filters
+            *filters
     ) -> int:
+        """
+        Возвращает количество указанных столбцов с учетом фильтров.
 
-        isValidFilters(self.model, filters)
+        Args:
+            *filters: Условия WHERE для фильтрации записей.
 
-        stmt = select(func.count()).select_from(self.model).filter_by(**filters)
-        return await self.db_session.execute(stmt)
+        Returns:
+            Количество записей.
+         """
+        stmt = select(func.count()).select_from(self.model).where(*filters)
+        stmt = await self.db_session.execute(stmt)
+        return stmt.scalar()
 
-    async def get_avg_by_filters(
+
+    async def get_avg(
             self,
-            column_name: str,
-            **filters
-    ) -> float:
+            column: Any,
+            *filters
+    ) -> Optional[float]:
         """
-        Возвращает среднее значение указанного столбца с учётом фильтров.
-        """
-        has_attr_order(self.model, column_name)
-        isValidFilters(self.model, filters)
+        Возвращает среднее значение указанного столбца с учетом фильтров.
 
-        stmt = select(func.avg(getattr(self.model, column_name))).select_from(self.model).filter_by(**filters)
+        Args:
+            column: Колонка модели для вычисления среднего.
+            *filters: Условия WHERE для фильтрации записей.
+
+        Returns:
+            Среднее значение (float) или None, если нет записей.
+        """
+        stmt = select(func.avg(column)).select_from(self.model).where(*filters)
         result = await self.db_session.execute(stmt)
-        return result.scalar() or None
+        return result.scalar_one_or_none()
+
+
+    async def exists(self, *filters: Any) -> bool:
+        """
+        Проверяет существование хотя бы одной записи, соответствующей фильтрам.
+
+        Args:
+            *filters: Условия WHERE для фильтрации записей.
+
+        Returns:
+            True, если существует хотя бы одна запись, иначе False.
+        """
+        stmt = select(func.count()).select_from(self.model).where(*filters)
+        result = await self.db_session.execute(stmt)
+        count = result.scalar()
+        return count > 0
 
     async def create(
             self,
-            schema,
-            flush: bool = True,
-            selected_columns: Optional[List] = None
-    ) -> Optional[DeclarativeBaseModel]:
-        is_valid_schema(self, self.model, schema)
+            schema: S,
+            flush: bool = True
+    ) -> T:
+        """
+        Создать одну запись с помощью ORM (add).
 
-        data = schema.model_dump()
+        Args:
+            schema: Pydantic схема
+            flush: Автоматически флашить сессию, чтобы вернуть обновленную информацию из БД
 
+        Returns:
+            Созданный объект
+        """
+        data = schema.model_dump(exclude_unset=True)
         instance = self.model(**data)
+
         self.db_session.add(instance)
+
         if flush:
             await self.db_session.flush()
             await self.db_session.refresh(instance)
-            return instance
 
-    async def multi_create(
+        return instance
+
+
+    async def bulk_insert(
             self,
-            schemas: Union[List, Tuple],
+            data_list: List[Dict[str, Any]]
     ) -> None:
+        """
+        Массовая вставка с помощью SQL INSERT.
 
-        for schema in schemas:
-            is_valid_schema(self, self.model, schema)
+        Args:
+            data_list: Список словарей с данными
+        """
+        if not data_list:
+            return
 
-            data = schema.model_dump()
-
-            instance = self.model(**data)
-            self.db_session.add(instance)
+        stmt = insert(self.model).values(data_list)
+        await self.db_session.execute(stmt)
 
     async def update(
             self,
-            schema,
-            **filters
-    ) -> DeclarativeBaseModel:
-        is_valid_schema(self, self.model, schema)
-        isValidFilters(self.model, filters)
+            schema: S,
+            *filters: BinaryExpression,
+            flush: bool = True,
+    ) -> Optional[T]:
+        """
+        Обновить одну запись через ORM.
 
-        data = schema.model_dump()
+        Args:
+            schema: Pydantic схема с обновляемыми полями
+            *filters: Условия WHERE для выбора записи
+            flush: Автоматически флашить сессию
 
-        query = select(self.model).filter_by(**filters)
-        result = await self.db_session.execute(query)
-        instance = result.scalars().first()
+        Returns:
+            Обновленный объект или None если не найден
+        """
+        data = schema.model_dump(exclude_unset=True, exclude_none=True)
 
-        if instance:
-            for key, value in data.items():
-                setattr(instance, key, value)
+        if not data:
+            return None
 
-            return instance
-        else:
-            raise UserNotFoundException()
+        stmt = select(self.model).where(*filters)
+        result = await self.db_session.execute(stmt)
+        instance = result.scalar_one_or_none()
 
-    async def update_by_dict(
+        if not instance:
+            raise NotFoundException(self.model)
+
+        for key, value in data.items():
+            setattr(instance, key, value)
+
+        if flush:
+            await self.db_session.flush()
+            await self.db_session.refresh(instance)
+
+        return instance
+
+
+    async def update_many(
             self,
-            data: dict,
-            **filters
-    ) -> DeclarativeBaseModel:
+            values: Dict[str, Any],
+            *filters: BinaryExpression,
+    ) -> int:
+        """
+        Обновить несколько записей одним SQL запросом (быстрее чем ORM update).
 
-        isValidFilters(self.model, filters)
+        Args:
+            values: Словарь {поле: значение}
+            *filters: Условия WHERE
 
-        query = select(self.model).filter_by(**filters)
-        result = await self.db_session.execute(query)
-        instance = result.scalars().first()
+        Returns:
+            Количество обновленных записей
+        """
+        if not values:
+            return 0
 
-        if instance:
-            for key, value in data.items():
-                setattr(instance, key, value)
+        stmt = update(self.model).values(values).where(*filters)
+        result = await self.db_session.execute(stmt)
+        return result.rowcount
 
-            return instance
-        else:
-            raise UserNotFoundException()
-
-    # TODO update_by_object, selected_columns to instance for update
-    async def update_by_pk(
-            self,
-            schema,
-            pk_values: List[Any],
-
-    ) -> DeclarativeBaseModel:
-        is_valid_schema(self, self.model, schema)
-
-        data = schema.model_dump()
-
-        pk_dict = dict(zip(self.model.get_pk_columns_names(), pk_values))
-        query = select(self.model).filter_by(
-            **pk_dict
-        )
-        result = await self.db_session.execute(query)
-        instance = result.scalars().first()
-        if instance:
-            for key, value in data.items():
-                setattr(instance, key, value)
-            return instance
-        else:
-            raise UserNotFoundException()
 
     async def delete(
-            self,
-            **filters
+        self,
+        *filters: BinaryExpression,
     ) -> bool:
+        """
+        Удаляет записи, соответствующие фильтрам.
 
-        isValidFilters(self.model, filters)
+        Args:
+            *filters: Условия WHERE для фильтрации записей.
 
-        query = delete(self.model).filter_by(**filters)
-        result = await self.db_session.execute(query)
-        if result.rowcount > 0:
-            return True
-        return False
+        Returns:
+            True, если удалена хотя бы одна запись, иначе False.
+        """
+        stmt = delete(self.model).where(*filters)
+        result = await self.db_session.execute(stmt)
+        return result.rowcount > 0
 
-    async def delete_by_pk(
-            self,
-            pk_values: List[Any],
-    ) -> bool:
-        pk_dict = dict(zip(self.model.get_pk_columns_names(), pk_values))
-        query = delete(self.model).filter_by(**pk_dict)
-        result = await self.db_session.execute(query)
-        if result.rowcount > 0:
-            return True
-        return False
+
+    async def execute_raw(self, query: str, params: Optional[Dict] = None) -> Any:
+        """
+        Выполнить сырой SQL запрос.
+
+        Args:
+            query: SQL запрос
+            params: Параметры для запроса
+
+        Returns:
+            Результат выполнения
+        """
+        if params:
+            result = await self.db_session.execute(query, params)
+        else:
+            result = await self.db_session.execute(query)
+        return result
