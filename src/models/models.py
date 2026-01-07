@@ -1,6 +1,7 @@
-import datetime
+from datetime import datetime, date, timezone
+from typing import Optional
 
-from sqlalchemy import Integer, String, DateTime, Float, ForeignKey, Boolean
+from sqlalchemy import Integer, String, DateTime, Float, ForeignKey, Boolean, Date
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -26,7 +27,8 @@ class User(DeclarativeBaseModel, PrimaryId, TimeBaseModel):
         is_active (bool): Флаг активности пользователя.
         last_active_time (datetime): Время последней активности пользователя.
         status (str | None): Статус пользователя.
-        refresh_token_update_time (datetime): Время последнего обновления refresh-токена.
+        created_at (datetime): Время создания.
+        updated_at (datetime | None): Время последнего обновления записи.
 
         routes (list[Route]): Маршруты, созданные пользователем.
         ratings (list[Rating]): Оценки маршрутов, оставленные пользователем.
@@ -42,12 +44,11 @@ class User(DeclarativeBaseModel, PrimaryId, TimeBaseModel):
     location: Mapped[str] = mapped_column(String, nullable=True)
     sex: Mapped[str] = mapped_column(String, nullable=True)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
-    birth: Mapped[str] = mapped_column(String, nullable=True)
+    birth: Mapped[date] = mapped_column(Date, nullable=True)
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=True)
-    last_active_time: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=True)
+    last_active_time: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=True)
     status: Mapped[str] = mapped_column(String, nullable=True)
-    refresh_token_update_time: Mapped[datetime.datetime] = mapped_column(DateTime, default=func.now(), nullable=True)
 
     routes: Mapped[list["Route"]] = relationship("Route", back_populates="user", cascade="all, delete-orphan")
     ratings: Mapped[list["Rating"]] = relationship("Rating", back_populates="user", cascade="all, delete-orphan")
@@ -66,6 +67,8 @@ class Route(DeclarativeBaseModel, TimeBaseModel, PrimaryId):
         comment (str | None): Комментарий к маршруту.
         locname_start (str | None): Начальная точка маршрута.
         locname_finish (str | None): Конечная точка маршрута.
+        created_at (datetime): Время создания.
+        updated_at (datetime | None): Время последнего обновления записи.
 
         user (User): Пользователь, создавший маршрут.
         ratings (list[Rating]): Оценки маршрута.
@@ -126,6 +129,8 @@ class Rating(DeclarativeBaseModel, TimeBaseModel):
         user_id (int): ID пользователя, оставившего оценку.
         value (int): Оценка маршрута.
         comment (str | None): Комментарий к оценке.
+        created_at (datetime): Время создания.
+        updated_at (datetime | None): Время последнего обновления записи.
 
         route (Route): Связанный маршрут.
         user (User): Пользователь, оставивший оценку.
@@ -141,3 +146,77 @@ class Rating(DeclarativeBaseModel, TimeBaseModel):
 
     route: Mapped["Route"] = relationship("Route", back_populates="ratings")
     user: Mapped["User"] = relationship("User", back_populates="ratings")
+
+
+class RefreshToken(DeclarativeBaseModel, TimeBaseModel):
+    """
+    Модель refresh-токена (серверное состояние сессии).
+
+    Один refresh-токен = одна строка в таблице.
+    Используется для:
+    - обновления access-токена,
+    - logout с одного устройства,
+    - logout со всех устройств пользователя.
+
+    Атрибуты:
+        id (int): Surrogate PK. Используется только БД, не участвует в бизнес-логике.
+        user_id (int): ID пользователя.
+        token_hash (str): SHA-256 хэш refresh-токена. Уникален.
+        device_fingerprint (str | None): Опциональная информация об устройстве.
+        expires_at (datetime): Время истечения refresh-токена.
+        revoked_at (datetime | None): Время отзыва токена. NULL = токен активен.
+        created_at (datetime): Время создания токена.
+        updated_at (datetime | None): Время последнего обновления записи.
+
+        user (User): Пользователь, которому принадлежит токен.
+    """
+
+    __tablename__ = "refresh_tokens"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    token_hash: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        unique=True,
+    )
+
+    device_fingerprint: Mapped[Optional[str]] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    # -------- Lifecycle --------
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="refresh_tokens",
+    )
+
+    @property
+    def is_active(self) -> bool:
+        """
+        Возвращает True, если refresh-токен:
+        - не отозван
+        - не истёк
+        """
+        now = datetime.now(timezone.utc)
+        return self.revoked_at is None and self.expires_at > now

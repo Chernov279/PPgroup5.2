@@ -6,53 +6,65 @@ from pathlib import Path
 
 
 class ConfigDataBase(BaseSettings):
-    # получение чувствительных данных из корневой папки
-    # ПРИ ОБНОВЛЕНИИ ДАННЫХ БД ПЕРЕЗАПУСТИТЬ, ЧТОБЫ ОБНОВИТЬ URL!!!
+    """
+    Конфигурация подключения к базе данных.
 
-    DATABASE_NAME: str = None
+    """
+
+    DATABASE_NAME: str | None = None
     DATABASE_HOST: str = "localhost"
-    DATABASE_USERNAME: str = None
-    DATABASE_PASSWORD: str = None
+    DATABASE_USERNAME: str | None = None
+    DATABASE_PASSWORD: str | None = None
     DATABASE_PORT: str = "5432"
 
     DB_ECHO_LOG: bool = True
-    DATABASE_URL: Optional[str] = None
-    DATABASE_URL_SYNC: Optional[str] = None
+
+    DATABASE_URL: str | None = None
+    DATABASE_URL_SYNC: str | None = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        if self.DATABASE_URL:
-            return
+        if not self.DATABASE_URL_SYNC:
+            self._build_sync_url()
 
-        missing_fields = [
-            field for field in [
-                "DATABASE_NAME",
-                "DATABASE_PASSWORD",
-                "DATABASE_USERNAME",
-            ]
-            if not getattr(self, field, None)
-        ]
-        if missing_fields:
-            raise ValueError(f"Следующие параметры не переданы или пустые: {', '.join(missing_fields)}")
+        if not self.DATABASE_URL:
+            self._build_async_url()
+
+    def _build_async_url(self) -> None:
+        self._validate_credentials()
 
         self.DATABASE_URL = (
             f"postgresql+asyncpg://{self.DATABASE_USERNAME}:{self.DATABASE_PASSWORD}"
             f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
         )
+
+    def _build_sync_url(self) -> None:
+        self._validate_credentials()
+
         self.DATABASE_URL_SYNC = (
             f"postgresql+psycopg2://{self.DATABASE_USERNAME}:{self.DATABASE_PASSWORD}"
             f"@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
         )
 
-    # получение данных из файла .env
+    def _validate_credentials(self) -> None:
+        missing = [
+            name for name in (
+                "DATABASE_NAME",
+                "DATABASE_USERNAME",
+                "DATABASE_PASSWORD",
+            )
+            if not getattr(self, name)
+        ]
+        if missing:
+            raise ValueError(
+                f"Не заданы обязательные параметры БД: {', '.join(missing)}"
+            )
+
     model_config = {
         "env_file": str(Path(__file__).parent.parent.parent.parent / ".env"),
-        "extra": "ignore"
+        "extra": "ignore",
     }
-    # class Config:
-    #     env_file = str(Path(__file__).parent.parent.parent.parent / ".env")
-    #     extra = "ignore"
 
 
 try:
