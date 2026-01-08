@@ -206,11 +206,6 @@ class RefreshToken(DeclarativeBaseModel, TimeBaseModel):
         nullable=True,
     )
 
-    user: Mapped["User"] = relationship(
-        "User",
-        back_populates="refresh_tokens",
-    )
-
     @property
     def is_active(self) -> bool:
         """

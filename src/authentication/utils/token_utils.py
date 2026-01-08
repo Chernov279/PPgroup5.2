@@ -1,12 +1,39 @@
+import secrets
 from datetime import timedelta, datetime
+from hashlib import sha256
 from typing import Optional, Union
 
 import jwt
 from fastapi import HTTPException
+from starlette.requests import Request
 
-from ..config.token_config import settings_token
-from ..exceptions.token_exceptions import InvalidTokenUserException
+from src.config.token_config import oauth2_scheme, settings_token
+from src.exceptions.token_exceptions import InvalidTokenUserException
 
+
+def get_optional_token(request: Request) -> Optional[str]:
+    """
+    Получает токен из заголовка Authorization.
+    Если токена нет — просто возвращает None, без ошибки 401.
+    """
+    authorization: Optional[str] = request.headers.get("Authorization")
+    if authorization and authorization.startswith("Bearer "):
+        return authorization.split("Bearer ")[1]
+    return None
+
+
+def get_token_sub_dep(request: Request, raise_exception: bool = False) -> Optional[int]:
+    """
+    Получает значение sub - обычно user_id - из заголовка Authorization через токен.
+    Если токена нет — просто возвращает None, без ошибки 401, как в oauth2_scheme.
+    """
+    if raise_exception:
+        token = oauth2_scheme(request)
+    else:
+        token = get_optional_token(request)
+
+    sub = get_sub_from_token(token, raise_exception=raise_exception)
+    return sub
 
 def set_refresh_token_cookie(response, refresh_token: str) -> None:
     """
@@ -42,49 +69,40 @@ def delete_refresh_token_cookie(response) -> None:
     """
     response.delete_cookie(
         key="refresh_token",
-        path="/get_token"
+        path="/refresh"
     )
 
 
-def create_access_token_by_refresh(refresh_token: str) -> str | None:
+def create_random_token(length: int = 64) -> str:
     """
-    Создание access токена на основе переданного refresh токена.
+    Создает случайный токен для использования как refresh токен.
 
-    ### Входные параметры:
-    - `refresh_token` (str): Refresh токен.
+    Args:
+        length: Длина токена в байтах (до генерации hex)
 
-    ### Логика:
-    1. Проверяется валидность refresh токена.
-    2. Генерируется новый access токен, на основе данных из refresh токена.
-
-    ### Возвращаемые данные:
-    - `str`: Сгенерированный access токен.
+    Returns:
+        Случайная строка в hex формате
     """
-    payload = verify_jwt_token(refresh_token)
-    if payload.get("type", "") != "refresh":
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return create_access_jwt_token(payload)
+    return secrets.token_hex(length // 2)
 
 
-def create_refresh_token(user_id: Union[int, str]) -> str | None:
+def create_refresh_token() -> str:
     """
-    Создание refresh токена для пользователя.
+    Создает случайный refresh токен (не JWT).
 
-    ### Входные параметры:
-    - `user_id` (int | str): Идентификатор пользователя.
-
-    ### Логика:
-    1. Проверяется валидность `user_id`.
-    2. Генерируется новый refresh токен.
-
-    ### Возвращаемые данные:
-    - `str`: Сгенерированный refresh токен.
+    Returns:
+        Случайный refresh токен
     """
-    if isinstance(user_id, str):
-        user_id = int(user_id)
-    refresh_token = create_refresh_jwt_token(user_id=user_id)
-    return refresh_token
+    return create_random_token(64)
 
+def hash_refresh_token(refresh_token: str) -> str:
+    """
+    Хэширует заданным алгоритмом refresh токен.
+
+    Returns:
+        Захэшированный refresh токен
+    """
+    return sha256(refresh_token.encode()).hexdigest()
 
 def create_access_token(user_id: Union[int, str]) -> str | None:
     """
@@ -122,9 +140,9 @@ def create_access_jwt_token(
     - `str`: Сгенерированный access токен.
     """
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings_token.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now() + timedelta(minutes=settings_token.ACCESS_TOKEN_EXPIRE_MINUTES)
     if data is not None:
         to_encode = data.copy()
         to_encode.update({"exp": expire})
@@ -134,40 +152,6 @@ def create_access_jwt_token(
         "sub": f'{user_id}' if user_id else "",
         "exp": expire,
         "type": "access"
-    }
-
-    encoded_jwt = jwt.encode(data, settings_token.SECRET_KEY, algorithm=settings_token.ALGORITHM)
-    return encoded_jwt
-
-
-def create_refresh_jwt_token(
-        data: dict | None = None,
-        user_id: int | None = None,
-        expires_delta: timedelta | None = None) -> str:
-    """
-    Генерация refresh JWT токена.
-
-    ### Входные параметры:
-    - `data` (dict | None): Дополнительные данные для токена.
-    - `user_id` (int | None): Идентификатор пользователя.
-    - `expires_delta` (timedelta | None): Время жизни токена. Если не передано, используется значение по умолчанию.
-
-    ### Возвращаемые данные:
-    - `str`: Сгенерированный refresh токен.
-    """
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(days=settings_token.REFRESH_TOKEN_EXPIRE_DAYS)
-    if data is not None:
-        to_encode = data.copy()
-        to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, settings_token.SECRET_KEY, algorithm=settings_token.ALGORITHM)
-        return encoded_jwt
-    data = {
-        "sub": f'{user_id}' if user_id else "",
-        "exp": expire,
-        "type": "refresh"
     }
 
     encoded_jwt = jwt.encode(data, settings_token.SECRET_KEY, algorithm=settings_token.ALGORITHM)
@@ -217,4 +201,5 @@ def get_sub_from_token(token, raise_exception: bool = True) -> Optional[int]:
         else:
             return None
 
-
+def get_token_expires_at():
+    return datetime.now() + timedelta(days=settings_token.REFRESH_TOKEN_EXPIRE_DAYS)

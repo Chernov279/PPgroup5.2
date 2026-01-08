@@ -1,8 +1,6 @@
 import re
 
-from fastapi.responses import JSONResponse
-
-from src.token_app.token_utils import create_refresh_token, create_access_token, set_refresh_token_cookie
+from src.exceptions.auth_exceptions import InvalidEmailException, InvalidUsernameException, InvalidPasswordException
 
 
 def is_valid_email(email: str) -> bool:
@@ -55,7 +53,7 @@ def is_strong_password(password: str) -> tuple[bool, str]:
     # Проверка на большое количество повторяющихся символов
     if len(set(password)) < 6:
         return False, password_invalids[4]
-    return True, ""
+    return True, "Good password"
 
 
 def is_valid_create_user_data(
@@ -63,30 +61,17 @@ def is_valid_create_user_data(
         check_email: bool = True,
         check_name: bool = True,
         check_password: bool = True
-) -> tuple[bool, str]:
+) -> None:
     if check_email:
         if not is_valid_email(user_in.email):
-            return False, "invalid email"
+            raise InvalidEmailException()
 
     if check_name:
         if not is_valid_username(user_in.name):
-            return False, "invalid username"
+            raise InvalidUsernameException()
 
     if check_password:
         is_valid_password = is_strong_password(user_in.password)
         if not is_valid_password[0]:
-            return is_valid_password
-    return True, ""
-
-
-def success_login_user(
-        user_id
-) -> JSONResponse:
-    refresh_token = create_refresh_token(user_id)
-    access_token = create_access_token(user_id)
-    response = JSONResponse(content={
-        "access_token": access_token,
-        "token_type": "bearer",
-    })
-    set_refresh_token_cookie(response, refresh_token)
-    return response
+            raise InvalidPasswordException(detail=is_valid_password[1])
+    return

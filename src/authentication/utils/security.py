@@ -30,4 +30,8 @@ def verify_password(plain_password: str, hashed_password: str, scrypt: str = "ar
     hasher = hashers.get(scrypt)
     if not hasher:
         raise AppException(detail="Wrong type of hash scrypt")
-    return ph.verify(hashed_password, plain_password)
+    try:
+        ph.verify(hashed_password, plain_password)
+        return True
+    except Exception:
+        return False
