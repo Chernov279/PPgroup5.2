@@ -1,4 +1,4 @@
-import asyncio
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -6,11 +6,12 @@ import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from pydantic_settings import BaseSettings
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.database.db_helper import DatabaseHelper, get_db_session
 from src.main import app
-from src.models.base_model import DeclarativeBaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class SettingsForTests(BaseSettings):
@@ -79,8 +80,7 @@ async def client(db_session):
     """Клиент FastAPI."""
 
     async def override_get_db():
-        async with db_session.begin():
-            yield db_session
+        yield db_session
 
     app.dependency_overrides[get_db_session] = override_get_db
 
@@ -93,3 +93,19 @@ async def client(db_session):
 
     app.dependency_overrides.clear()
 
+
+@pytest.fixture
+def debug_response():
+    """Фикстура для отладки ответов."""
+
+    def _debug(response, expected_status=None):
+        logger.warning(f"URL: {response.url}")
+        logger.warning(f"Status Code: {response.status_code}")
+        logger.warning(f"Headers: {dict(response.headers)}")
+        logger.warning(f"Response Body: {response.text[:500]}")  # Первые 500 символов
+
+        if expected_status and response.status_code != expected_status:
+            logger.error(f"Expected {expected_status}, got {response.status_code}")
+            logger.error(f"Full response: {response.text}")
+
+    return _debug
