@@ -1,10 +1,9 @@
 from fastapi import Depends, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette import status
-from starlette.responses import JSONResponse
 
 from .dependencies import get_auth_service, get_refresh_token
-from .schemas import AccessTokenOut, AuthRegisterIn, TokensOut, AuthLoginIn, LogoutAllOut, LogoutOut
+from .schemas import AuthRegisterIn, TokensOut, AuthLoginIn, LogoutAllOut, LogoutOut
 from .service import AuthService
 
 

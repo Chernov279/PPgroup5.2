@@ -17,3 +17,22 @@ class TokenMissingException(AppException):
             if token_type is not None else \
             "Token is missing"
         super().__init__(status_code=401, detail=detail)
+
+
+class InvalidTokenException(AppException):
+    """Исключение при невалидном токене"""
+    def __init__(self, detail: str = "Invalid token"):
+        super().__init__(status_code=401, detail=detail)
+
+
+class TokenRevokedException(AppException):
+    """Исключение при отозванном токене"""
+    def __init__(self, detail: str = "Token has been revoked"):
+        super().__init__(status_code=403, detail=detail)
+
+
+class TokenExpiredException(AppException):
+    """Исключение при истекшем токене"""
+    def __init__(self, detail: str = "Token has expired"):
+        super().__init__(status_code=401, detail=detail)
+

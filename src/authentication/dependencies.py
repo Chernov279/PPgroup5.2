@@ -1,14 +1,16 @@
 from typing import Optional
 
-from fastapi import Body, Cookie
+from fastapi import Body, Cookie, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config import db_helper
 from .service import AuthService
+from ..config.database.db_helper import get_db_session
 
 
-async def get_auth_service():
-    async with db_helper.get_db_session() as db_session:
-        yield AuthService(db_session)
+async def get_auth_service(
+    session: AsyncSession = Depends(get_db_session),
+) -> AuthService:
+    return AuthService(session)
 
 
 async def get_refresh_token(
