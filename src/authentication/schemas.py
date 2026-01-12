@@ -3,7 +3,7 @@ from typing import Optional
 
 from src.config import settings_token
 from src.schemas.base_schemas import BaseSchema
-from src.user.user_schemas import UserBaseSchema
+from src.user.schemas import UserBaseSchema
 
 TOKEN_TYPE: str = 'Bearer'
 
@@ -48,12 +48,12 @@ class AccessTokenOut(BaseSchema):
 
 
 class LogoutOut(BaseSchema):
-    message: str
+    message: str = "Successfully logged out from device"
     device_logged_out: bool
     timestamp: str
 
 
 class LogoutAllOut(BaseSchema):
-    message: str
+    message: str = "Successfully logged out from all devices"
     devices_logged_out: int
     timestamp: str

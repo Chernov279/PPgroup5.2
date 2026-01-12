@@ -1,5 +1,5 @@
 import secrets
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 from hashlib import sha256
 from typing import Optional, Union
 
@@ -11,29 +11,7 @@ from src.config.token_config import oauth2_scheme, settings_token
 from src.exceptions.token_exceptions import InvalidTokenUserException
 
 
-def get_optional_token(request: Request) -> Optional[str]:
-    """
-    Получает токен из заголовка Authorization.
-    Если токена нет — просто возвращает None, без ошибки 401.
-    """
-    authorization: Optional[str] = request.headers.get("Authorization")
-    if authorization and authorization.startswith("Bearer "):
-        return authorization.split("Bearer ")[1]
-    return None
 
-
-def get_token_sub_dep(request: Request, raise_exception: bool = False) -> Optional[int]:
-    """
-    Получает значение sub - обычно user_id - из заголовка Authorization через токен.
-    Если токена нет — просто возвращает None, без ошибки 401, как в oauth2_scheme.
-    """
-    if raise_exception:
-        token = oauth2_scheme(request)
-    else:
-        token = get_optional_token(request)
-
-    sub = get_sub_from_token(token, raise_exception=raise_exception)
-    return sub
 
 def set_refresh_token_cookie(response, refresh_token: str) -> None:
     """
@@ -140,9 +118,9 @@ def create_access_jwt_token(
     - `str`: Сгенерированный access токен.
     """
     if expires_delta:
-        expire = datetime.now() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now() + timedelta(minutes=settings_token.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings_token.ACCESS_TOKEN_EXPIRE_MINUTES)
     if data is not None:
         to_encode = data.copy()
         to_encode.update({"exp": expire})
@@ -202,4 +180,4 @@ def get_sub_from_token(token, raise_exception: bool = True) -> Optional[int]:
             return None
 
 def get_token_expires_at():
-    return datetime.now() + timedelta(days=settings_token.REFRESH_TOKEN_EXPIRE_DAYS)
+    return datetime.now(timezone.utc) + timedelta(days=settings_token.REFRESH_TOKEN_EXPIRE_DAYS)

@@ -9,10 +9,11 @@ from src.authentication.utils.security import hash_password, verify_password
 from src.authentication.utils.token_utils import create_access_token, create_refresh_token, hash_refresh_token, \
     get_token_expires_at
 from src.exceptions.auth_exceptions import InvalidCredentialsException, EmailAlreadyExistsException
+from src.exceptions.base_exceptions import FailedActionException
 from src.exceptions.token_exceptions import InvalidTokenException, TokenRevokedException, TokenExpiredException
 from src.models.models import User
 from src.repositories.refresh_token_repository import TokenRepository
-from src.user.user_repository import UserRepository
+from src.user.repository import UserRepository
 
 
 class AuthService:
@@ -38,7 +39,8 @@ class AuthService:
         )
 
         user = await self._user_repo.create_user(
-            user_in=auth_internal
+            user_in=auth_internal,
+            returning_columns=User.get_pk_columns()
         )
 
         refresh_token = create_refresh_token()
@@ -49,7 +51,9 @@ class AuthService:
             expires_at=get_token_expires_at(),
             # device_fingerprint=device_fingerprint
         )
-        await self._token_repo.create_refresh_token(token_data)
+        is_created = await self._token_repo.create_refresh_token(token_data)
+        if not is_created:
+            raise FailedActionException(action="Create refresh token")
         await self._session.commit()
         return TokensOut(
             access_token=create_access_token(user.id),
@@ -158,7 +162,6 @@ class AuthService:
         await self._session.commit()
 
         return LogoutOut(
-            message="Successfully logged out from device",
             device_logged_out=is_revoked,
             timestamp=datetime.now(timezone.utc).isoformat()
         )
@@ -181,7 +184,6 @@ class AuthService:
         await self._session.commit()
 
         return LogoutAllOut(
-            message="Successfully logged out from all devices",
             devices_logged_out=revoked_count,
             timestamp=datetime.now(timezone.utc).isoformat()
         )
