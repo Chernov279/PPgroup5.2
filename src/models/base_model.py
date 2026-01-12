@@ -18,7 +18,7 @@ class DeclarativeBaseModel(DeclarativeBase):
     def get_pk_columns(cls) -> List[Any]:
         """
         Получает объекты колонок, являющихся первичными ключами модели.
-        Обычно используется для выбора конкретных колонок в базе данных через selected_columns
+        Обычно используется для выбора конкретных колонок в базе данных через model_columns
         User.get_pk_columns() -> [User.id,]
         """
         pk_column_names = [col.name for col in cls.__mapper__.primary_key]
@@ -27,7 +27,7 @@ class DeclarativeBaseModel(DeclarativeBase):
     @classmethod
     def get_columns_by_names(cls, *column_names) -> List[Any]:
         """Получает объекты колонок по их именам.
-        Обычно используется для выбора конкретных колонок в базе данных через selected_columns
+        Обычно используется для выбора конкретных колонок в базе данных через model_columns
         User.get_columns_by_names("name", "surname", "email") -> [User.name, User.surname, User.email]
         """
         return [getattr(cls, column_name) for column_name in column_names]

@@ -1,5 +1,6 @@
 from asyncio import current_task
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from .db_config import settings_db
 
@@ -42,3 +43,8 @@ class DatabaseHelper:
 
 
 db_helper = DatabaseHelper(settings_db.DATABASE_URL, settings_db.DB_ECHO_LOG)
+
+
+async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+    async with db_helper.get_db_session() as session:
+        yield session

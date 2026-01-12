@@ -23,7 +23,6 @@ class User(DeclarativeBaseModel, PrimaryId, TimeBaseModel):
         telephone_number (str): Номер телефона (уникальный, опционально)
         email_verified (bool): Подтвержден ли email
         surname (str): Фамилия (опционально)
-        patronymic (str): Отчество (опционально)
         location (str): Город/страна (опционально)
         sex (str): Пол ('M'/'F' или NULL)
         birth (date): Дата рождения (с проверкой валидности)
@@ -128,27 +127,27 @@ class User(DeclarativeBaseModel, PrimaryId, TimeBaseModel):
     )
 
     # Relationships
+    # Статус пользователя с правами доступа
     status_ref: Mapped["UserStatus"] = relationship(
         "UserStatus",
         lazy='joined',  # Всегда подгружаем статус JOIN'ом
         innerjoin=True,
-        comment="Статус пользователя с правами доступа"
     )
 
+    # Маршруты созданные пользователем
     routes: Mapped[list["Route"]] = relationship(
         "Route",
         back_populates="user",
         cascade="all, delete-orphan",
         lazy="dynamic",
-        comment="Маршруты созданные пользователем"
     )
 
+    # Оценки оставленные пользователем
     ratings: Mapped[list["Rating"]] = relationship(
         "Rating",
         back_populates="user",
         cascade="all, delete-orphan",
         lazy="dynamic",
-        comment="Оценки оставленные пользователем"
     )
 
     @property
@@ -296,12 +295,12 @@ class UserStatus(DeclarativeBaseModel, PrimaryId):
     )
 
     # Relationships
+    # Все пользователи с этим статусом
     users: Mapped[list["User"]] = relationship(
         "User",
         back_populates="status_ref",
         cascade="all, delete-orphan",
         lazy="dynamic",
-        comment="Все пользователи с этим статусом"
     )
 
 

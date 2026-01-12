@@ -25,7 +25,7 @@ class Settings(BaseSettings):
                 "DEBUG",
                 "VERSION"
             ]
-            if not getattr(self, field, None)
+            if getattr(self, field, None) is None
         ]
         if missing_fields:
             raise ValueError(f"Следующие параметры не переданы или пустые: {', '.join(missing_fields)}")
