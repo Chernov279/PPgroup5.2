@@ -8,6 +8,7 @@ from src.utils.database_utils import valid_limit, valid_offset
 class MultiGetParams(BaseSchema):
     limit: int = Query(30, description="Limit")
     offset: int = Query(0, description="Offset")
+    # order_by: int = Query("id", description="Offset")
 
     @field_validator("limit")
     @classmethod
