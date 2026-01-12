@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from .user_repository import UserRepository
+from .repository import UserRepository
 
 from ..exceptions.user_exceptions import UserNotFoundException
 from ..repositories.sqlalchemy_uow import SqlAlchemyUnitOfWork
@@ -34,17 +34,14 @@ class UserUnitOfWork(SqlAlchemyUnitOfWork):
             selected_columns: Optional[List] = None
     ):
         try:
-            user = await self.repository.get_user_by_id(
-                user_id=user_id,
-                selected_columns=selected_columns,
-            )
+            user = await self.repository.get_user_model_by_id(user_id=user_id)
             return user
         except Exception as e:
             raise e
 
     async def create_user_uow(self, user_in):
         try:
-            user = await self.repository.create_user(user_in)
+            user = await self.repository.create_user_returning(user_in)
             await self.db_session.commit()
             return user
         except Exception as e:
@@ -53,7 +50,7 @@ class UserUnitOfWork(SqlAlchemyUnitOfWork):
 
     async def update_user_uow(self, user_in, user_id):
         try:
-            user = await self.repository.update_user(user_in, user_id)
+            user = await self.repository.update_user_returning(user_in, user_id, )
             await self.db_session.commit()
             return user
         except UserNotFoundException:

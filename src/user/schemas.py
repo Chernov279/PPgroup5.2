@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional
+from typing import Optional, Any
 
 from fastapi import Query
 
@@ -8,13 +8,7 @@ from ..schemas.base_schemas import BaseSchema
 
 
 class UserBaseSchema(BaseSchema):
-    @classmethod
-    def get_selected_columns(cls, cls_model=User):
-        return super().get_selected_columns(cls_model)
-
-
-class UserPrimaryKey(UserBaseSchema):
-    id: int = Query(..., description="id")
+    __model__ = User
 
 
 class UserCreateIn(UserBaseSchema):
@@ -46,9 +40,27 @@ class UserDetailOut(UserShortOut):
     sex: str | None
     created_at: datetime.datetime | None
     birth: str | None
-
-
-class UserActivity(UserBaseSchema):
-    id: int
-    is_active: Optional[bool]
     last_active_time: Optional[datetime.datetime]
+
+
+class UserActivityInternal(UserBaseSchema):
+    id: int
+    last_active_time: Optional[datetime.datetime]
+
+
+class UserActivityOut(UserActivityInternal):
+    formatted_last_active_time: Optional[str]
+
+
+class UserUpdateActivityOut(BaseSchema):
+    """Схема для ответа об обновлении активности"""
+    user_id: int
+    last_active_time: datetime.datetime
+    updated: bool
+    message: str = "Activity updated"
+
+class UserDeleteOut(BaseSchema):
+    """Схема для ответа об удалении"""
+    user_id: int
+    message: str = "User deleted successfully"
+    timestamp: datetime.datetime
