@@ -9,14 +9,16 @@ class BaseSchema(BaseModel):
     __model__: ClassVar[type | None] = None
     model_columns: ClassVar[list[Any]]
 
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
+    @classmethod
+    def __pydantic_init_subclass__(cls, **kwargs):
+        super().__pydantic_init_subclass__(**kwargs)
 
         if cls.__model__ is None:
+            cls.model_columns = []
             return
 
         cls.model_columns = [
-            getattr(cls.__model__, field)
-            for field in cls.model_fields
-            if hasattr(cls.__model__, field)
+            getattr(cls.__model__, field_name)
+            for field_name in cls.model_fields
+            if hasattr(cls.__model__, field_name)
         ]
