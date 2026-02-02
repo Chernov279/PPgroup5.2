@@ -1,6 +1,7 @@
 import logging
+import uuid
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any, AsyncGenerator
 
 import pytest
 import pytest_asyncio
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.database.db_helper import DatabaseHelper, get_db_session
 from src.main import app
+from tests.auth.constants import REGISTER_PATH, LOGIN_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -109,3 +111,49 @@ def debug_response():
             logger.error(f"Full response: {response.text}")
 
     return _debug
+
+
+@pytest_asyncio.fixture(scope="function")
+async def create_user(client: AsyncClient) -> AsyncGenerator:
+    """Фабрика для создания тестовых пользователей"""
+
+    created_users = []
+
+    async def factory(**overrides) -> dict[str, Any]:
+        """Создает пользователя с уникальными данными"""
+        test_id = uuid.uuid4().hex[:8]
+
+        user_data = {
+            "name": f"User_{test_id}",
+            "email": f"user_{test_id}@example.com",
+            "password": "TestPass123!",
+            **overrides
+        }
+
+        # Регистрация
+        register_response = await client.post(REGISTER_PATH, json=user_data)
+        assert 200 <= register_response.status_code <= 299 , f"Registration failed: {register_response.text}"
+
+        # Логин для получения токена
+        login_response = await client.post(LOGIN_PATH, json={
+            "email": user_data["email"],
+            "password": user_data["password"]
+        })
+        assert 200 <= login_response.status_code <= 299, f"Login failed: {login_response.text}"
+
+        tokens = login_response.json()
+
+        user_info = {
+            "id": register_response.json().get("user_id"),
+            "email": user_data["email"],
+            "name": user_data["name"],
+            "headers": {"Authorization": f"Bearer {tokens['access_token']}"},
+            "access_token": tokens["access_token"],
+            "refresh_token": tokens["refresh_token"],
+            "raw_data": user_data
+        }
+
+        created_users.append(user_info)
+        return user_info
+
+    yield factory
