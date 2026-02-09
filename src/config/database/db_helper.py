@@ -42,7 +42,7 @@ class DatabaseHelper:
             await session.close()
 
 
-db_helper = DatabaseHelper(settings_db.DATABASE_URL, settings_db.DB_ECHO_LOG)
+db_helper = DatabaseHelper(settings_db.POSTGRES_URL, settings_db.POSTGRES_ECHO_LOG)
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:

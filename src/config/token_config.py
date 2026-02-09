@@ -14,12 +14,6 @@ class TokenSettings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
 
-    # получение данных из файла .env
-    model_config = {
-        "env_file": str(Path(__file__).parent.parent.parent / ".env"),
-        "extra": "ignore"
-    }
-
 
 try:
     settings_token = TokenSettings()

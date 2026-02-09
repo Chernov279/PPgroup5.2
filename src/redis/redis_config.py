@@ -15,11 +15,6 @@ class ConfigRedis(BaseSettings):
     REDIS_URL0: Optional[str] = None
     REDIS_URL1: Optional[str] = None
 
-    # получение данных из файла .env
-    model_config = {
-        "env_file": str(Path(__file__).parent.parent.parent / ".env"),
-        "extra": "ignore"
-    }
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

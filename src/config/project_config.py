@@ -30,12 +30,6 @@ class Settings(BaseSettings):
         if missing_fields:
             raise ValueError(f"Следующие параметры не переданы или пустые: {', '.join(missing_fields)}")
 
-    # получение данных из файла .env
-    model_config = {
-        "env_file": str(Path(__file__).parent.parent.parent / ".env"),
-        "extra": "ignore"
-    }
-
 
 try:
     settings_project = Settings()

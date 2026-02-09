@@ -17,32 +17,27 @@ logger = logging.getLogger(__name__)
 
 
 class SettingsForTests(BaseSettings):
-    TEST_DATABASE_NAME: str
-    TEST_DATABASE_HOST: str
-    TEST_DATABASE_USERNAME: str
-    TEST_DATABASE_PASSWORD: str
-    TEST_DATABASE_PORT: int
+    TEST_POSTGRES_DB: str
+    TEST_POSTGRES_HOST: str
+    TEST_POSTGRES_USER: str
+    TEST_POSTGRES_PASSWORD: str
+    TEST_POSTGRES_PORT: int
 
-    TEST_DATABASE_URL: Optional[str] = None
-    TEST_DATABASE_URL_SYNC: Optional[str] = None
+    TEST_POSTGRES_URL: Optional[str] = None
+    TEST_POSTGRES_URL_SYNC: Optional[str] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if not self.TEST_DATABASE_URL:
-            self.TEST_DATABASE_URL = (
-                f"postgresql+asyncpg://{self.TEST_DATABASE_USERNAME}:{self.TEST_DATABASE_PASSWORD}"
-                f"@{self.TEST_DATABASE_HOST}:{self.TEST_DATABASE_PORT}/{self.TEST_DATABASE_NAME}"
+        if not self.TEST_POSTGRES_URL:
+            self.TEST_POSTGRES_URL = (
+                f"postgresql+asyncpg://{self.TEST_POSTGRES_USER}:{self.TEST_POSTGRES_PASSWORD}"
+                f"@{self.TEST_POSTGRES_HOST}:{self.TEST_POSTGRES_PORT}/{self.TEST_POSTGRES_DB}"
             )
-        if not self.TEST_DATABASE_URL_SYNC:
-            self.TEST_DATABASE_URL_SYNC = (
-                f"postgresql+psycopg2://{self.TEST_DATABASE_USERNAME}:{self.TEST_DATABASE_PASSWORD}"
-                f"@{self.TEST_DATABASE_HOST}:{self.TEST_DATABASE_PORT}/{self.TEST_DATABASE_NAME}"
+        if not self.TEST_POSTGRES_URL_SYNC:
+            self.TEST_POSTGRES_URL_SYNC = (
+                f"postgresql+psycopg2://{self.TEST_POSTGRES_USER}:{self.TEST_POSTGRES_PASSWORD}"
+                f"@{self.TEST_POSTGRES_HOST}:{self.TEST_POSTGRES_PORT}/{self.TEST_POSTGRES_DB}"
             )
-
-    model_config = {
-        "env_file": str(Path(__file__).parent.parent / ".env"),
-        "extra": "ignore"
-    }
 
 test_settings = SettingsForTests()
 test_db_helper = DatabaseHelper(url=test_settings.TEST_DATABASE_URL, echo=True)
