@@ -1,0 +1,47 @@
+# Автоматически применяется при docker compose up
+services:
+  nginx:
+
+  fastapi_app:
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--reload"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+    environment:
+      POSTGRES_ECHO_LOG: True
+
+  postgres:
+    ports:
+      - "5432:5432"  # Доступ с хоста для pgAdmin
+
+  redis:
+    ports:
+      - "6379:6379"  # Доступ для redis-cli
+
+  kafka:
+    ports:
+      - "9092:9092"  # Доступ для тестов
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    container_name: kafdrop
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+    networks:
+      - backend
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis
+    networks:
+      - backend

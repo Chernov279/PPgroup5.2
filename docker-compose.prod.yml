@@ -1,0 +1,6 @@
+services:
+  fastapi_app:
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--workers", "4"]
+    volumes: []
+    environment:
+      DEBUG: false
