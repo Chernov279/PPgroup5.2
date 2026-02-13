@@ -2,9 +2,10 @@ from fastapi import Depends, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette import status
 
-from .dependencies import get_auth_service, get_refresh_token
-from .schemas import AuthRegisterIn, TokensOut, AuthLoginIn, LogoutAllOut, LogoutOut
-from .service import AuthService
+from src.api.dependencies import get_refresh_token
+from src.core.auth.dependencies import get_auth_service
+from src.core.auth.service import AuthService
+from src.schemas.auth import AuthLoginIn, AuthRegisterIn, LogoutAllOut, LogoutOut, TokensOut
 
 
 auth = APIRouter(prefix="/auth", tags=["Authentication"])

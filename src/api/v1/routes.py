@@ -1,17 +1,19 @@
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends
+from httpx import get
 from starlette import status
 
-from .route_schemas import RouteOut, RouteDetailOut, RouteCreateIn, RouteUpdateIn
-from .route_service import RouteService
-from ..config.token_config import oauth2_scheme
-from ..schemas.database_params_schemas import MultiGetParams
-
-route = APIRouter(prefix="/routes", tags=["Route"])
+from src.api.dependencies import get_token_sub_optional, get_token_sub_required
+from src.core.routes.service import RouteService
+from src.schemas.database_params_schemas import MultiGetParams
+from src.schemas.routes import RouteCreateIn, RouteDetailOut, RouteOut, RouteUpdateIn
 
 
-@route.get(
+routes = APIRouter(prefix="/routes", tags=["Route"])
+
+
+@routes.get(
    "/",
    response_model=List[RouteOut],
    summary="List all routes",
@@ -22,13 +24,14 @@ route = APIRouter(prefix="/routes", tags=["Route"])
    },
 )
 async def get_all_routes_endpoint(
+        token_sub: Annotated[int, Depends(get_token_sub_optional)],
         multi_get_params: MultiGetParams = Depends(),
         route_service: RouteService = Depends()
 ):
-    return await route_service.get_all_routes_service(multi_get_params)
+    return await route_service.get_all_routes_service(token_sub, multi_get_params)
 
 
-@route.get(
+@routes.get(
     "/my",
     response_model=List[RouteOut],
     summary="List my routes",
@@ -39,14 +42,14 @@ async def get_all_routes_endpoint(
     },
 )
 async def get_my_routes_endpoint(
-        token: Annotated[str, Depends(oauth2_scheme)],
+        token: Annotated[str, Depends(get_token_sub_required)],
         multi_get_params: MultiGetParams = Depends(),
         route_service: RouteService = Depends()
 ):
     return await route_service.get_my_routes_service(token, multi_get_params)
 
 
-@route.get(
+@routes.get(
     "/{route_id}/detail",
     response_model=RouteDetailOut,
     summary="Route detail",
@@ -57,13 +60,14 @@ async def get_my_routes_endpoint(
     },
 )
 async def get_route_detail_endpoint(
+        token_sub: Annotated[int, Depends(get_token_sub_optional)],
         route_id: int,
         route_service: RouteService = Depends()
 ):
-    return await route_service.get_route_detail_service(route_id)
+    return await route_service.get_route_detail_service(token_sub, route_id)
 
 
-@route.get(
+@routes.get(
     "/{route_id}",
     response_model=RouteOut,
     summary="Get route by id",
@@ -74,13 +78,14 @@ async def get_route_detail_endpoint(
     },
 )
 async def get_route_by_id_endpoint(
+        token_sub: Annotated[int, Depends(get_token_sub_optional)],
         route_id: int,
         route_service: RouteService = Depends()
 ):
-    return await route_service.get_route_by_id_service(route_id)
+    return await route_service.get_route_by_id_service(token_sub, route_id)
 
 
-@route.post(
+@routes.post(
     "/",
     response_model=RouteOut,
     status_code=status.HTTP_201_CREATED,
@@ -93,33 +98,33 @@ async def get_route_by_id_endpoint(
     },
 )
 async def create_route_endpoint(
-        token: Annotated[str, Depends(oauth2_scheme)],
+        token: Annotated[str, Depends(get_token_sub_required)],
         route_in: RouteCreateIn,
         route_service: RouteService = Depends()
 ):
     return await route_service.create_route_service(token, route_in)
 
 
-@route.put(
-    "/{route_id}",
-    status_code=status.HTTP_200_OK,
-    summary="Update route",
-    description="Update route data. Only owner can update the route",
-    responses={
-        200: {"description": "Route updated"},
-        403: {"description": "Forbidden"}
-    },
-)
-async def update_route_endpoint(
-        token: Annotated[str, Depends(oauth2_scheme)],
-        route_id: int,
-        route_in: RouteUpdateIn,
-        route_service: RouteService = Depends(),
-):
-    return await route_service.update_route_service(token, route_id, route_in)
+# @routes.put(
+#     "/{route_id}",
+#     status_code=status.HTTP_200_OK,
+#     summary="Update route",
+#     response_model=None,
+#     description="Update route data. Only owner can update the route",
+#     responses={
+#         200: {"description": "Route updated"},
+#         403: {"description": "Forbidden"}
+#     },
+# )
+# async def update_route_endpoint(
+#         token: Annotated[str, Depends(get)],
+#         route_id: int,
+#         route_in: RouteUpdateIn,
+# ):
+#     pass
 
 
-@route.delete(
+@routes.delete(
     "/{route_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete route",
@@ -131,7 +136,7 @@ async def update_route_endpoint(
     },
 )
 async def delete_route_endpoint(
-        token: Annotated[str, Depends(oauth2_scheme)],
+        token: Annotated[str, Depends(get_token_sub_required)],
         route_id: int,
         route_service: RouteService = Depends()
 ):

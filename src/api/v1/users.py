@@ -4,16 +4,17 @@ from fastapi import Depends, APIRouter, Path, Query
 from starlette import status
 from starlette.responses import Response
 
-from .dependencies import get_user_service
-from .service import UserService
-from .schemas import UserDetailOut, UserShortOut, UserUpdateIn, UserActivityOut, UserUpdateActivityOut
-from ..authentication.dependencies import get_token_sub_optional, get_token_sub_required
-from ..schemas.database_params_schemas import MultiGetParams
+from src.api.dependencies import get_token_sub_optional, get_token_sub_required
+from src.core.user.dependencies import get_user_service
+from src.core.user.service import UserService
+from src.schemas.schemas import UserActivityOut, UserDetailOut, UserShortOut, UserUpdateActivityOut, UserUpdateIn
 
-user = APIRouter(prefix="/users", tags=["User"])
+from ...schemas.database_params_schemas import MultiGetParams
+
+users = APIRouter(prefix="/users", tags=["User"])
 
 
-@user.get(
+@users.get(
     "/",
     response_model=List[UserShortOut],
     summary="Получение списка пользователей",
@@ -36,7 +37,7 @@ async def get_all_users(
     return await user_service.get_all_users(token_sub, params)
 
 
-@user.get(
+@users.get(
     "/me",
     response_model=UserDetailOut,
     summary="Получение текущего пользователя",
@@ -56,7 +57,7 @@ async def get_me(
     return await user_service.get_user_me(token_sub)
 
 
-@user.get(
+@users.get(
     "/activity/{user_id}",
     response_model=UserActivityOut,
     summary="Получение активности пользователя",
@@ -73,7 +74,7 @@ async def get_user_activity(
     return await user_service.get_user_activity(token_sub, user_id)
 
 
-@user.get(
+@users.get(
     "/{user_id}",
     response_model=UserDetailOut,
     summary="Получение пользователя по ID",
@@ -95,7 +96,7 @@ async def get_user_by_id(
     return await user_service.get_user_by_id(token_sub, user_id)
 
 
-@user.put(
+@users.put(
     "/me",
     response_model=UserDetailOut,
     summary="Обновление данных пользователя",
@@ -117,7 +118,7 @@ async def update_me(
     return await user_service.update_user(user_in, token_sub)
 
 
-@user.patch(
+@users.patch(
     "/activity",
     response_model=UserUpdateActivityOut,
     status_code=status.HTTP_202_ACCEPTED,
@@ -143,7 +144,7 @@ async def update_user_activity(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@user.delete(
+@users.delete(
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,  # 204 для удаления
     summary="Удаление пользователя",
