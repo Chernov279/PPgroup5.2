@@ -1,8 +1,7 @@
 from typing import Optional, List
 
-from pydantic import ValidationError, ConfigDict
+from pydantic import ValidationError
 from pydantic_settings import BaseSettings
-from pathlib import Path
 
 
 class ConfigRedis(BaseSettings):

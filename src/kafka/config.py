@@ -1,4 +1,3 @@
-from pathlib import Path
 
 from pydantic import ValidationError
 from pydantic_settings import BaseSettings
