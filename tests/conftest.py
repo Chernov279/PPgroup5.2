@@ -1,15 +1,15 @@
 import logging
 import uuid
-from pathlib import Path
 from typing import Optional, Any, AsyncGenerator
 
+from pydantic import computed_field
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from pydantic_settings import BaseSettings
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config.database.db_helper import DatabaseHelper, get_db_session
+from src.db.db_helper import DatabaseHelper, get_db_session
 from src.main import app
 from tests.auth.constants import REGISTER_PATH, LOGIN_PATH
 
@@ -23,24 +23,25 @@ class SettingsForTests(BaseSettings):
     TEST_POSTGRES_PASSWORD: str
     TEST_POSTGRES_PORT: int
 
-    TEST_POSTGRES_URL: Optional[str] = None
-    TEST_POSTGRES_URL_SYNC: Optional[str] = None
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if not self.TEST_POSTGRES_URL:
-            self.TEST_POSTGRES_URL = (
-                f"postgresql+asyncpg://{self.TEST_POSTGRES_USER}:{self.TEST_POSTGRES_PASSWORD}"
-                f"@{self.TEST_POSTGRES_HOST}:{self.TEST_POSTGRES_PORT}/{self.TEST_POSTGRES_DB}"
-            )
-        if not self.TEST_POSTGRES_URL_SYNC:
-            self.TEST_POSTGRES_URL_SYNC = (
-                f"postgresql+psycopg2://{self.TEST_POSTGRES_USER}:{self.TEST_POSTGRES_PASSWORD}"
-                f"@{self.TEST_POSTGRES_HOST}:{self.TEST_POSTGRES_PORT}/{self.TEST_POSTGRES_DB}"
-            )
+    @computed_field
+    @property
+    def TEST_POSTGRES_URL(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.TEST_POSTGRES_USER}:{self.TEST_POSTGRES_PASSWORD}"
+            f"@{self.TEST_POSTGRES_HOST}:{self.TEST_POSTGRES_PORT}/{self.TEST_POSTGRES_DB}"
+        )
 
-test_settings = SettingsForTests()
-test_db_helper = DatabaseHelper(url=test_settings.TEST_DATABASE_URL, echo=True)
+    @computed_field
+    @property
+    def TEST_POSTGRES_URL_SYNC(self) -> str:
+        return (
+            f"postgresql+psycopg2://{self.TEST_POSTGRES_USER}:{self.TEST_POSTGRES_PASSWORD}"
+            f"@{self.TEST_POSTGRES_HOST}:{self.TEST_POSTGRES_PORT}/{self.TEST_POSTGRES_DB}"
+        )
+
+test_settings = SettingsForTests() # type: ignore
+test_db_helper = DatabaseHelper(url=test_settings.TEST_POSTGRES_URL, echo=True)
 
 
 

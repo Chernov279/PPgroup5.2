@@ -1,12 +1,12 @@
 from redis.asyncio import Redis
 from contextlib import asynccontextmanager
 
+from src.config import settings
 from src.redis.redis_config import settings_redis
 
-redis0 = Redis.from_url(settings_redis.REDIS_URL0, decode_responses=True)
-redis1 = Redis.from_url(settings_redis.REDIS_URL1, decode_responses=True)
+redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
 
-redis_dbs = (redis0, redis1)
+redis_dbs = (redis,)
 
 
 @asynccontextmanager

@@ -1,6 +1,6 @@
+from src.db.models.base_model import DeclarativeBaseModel
+from src.schemas.base import BaseSchema
 from src.exceptions.base_exceptions import ValidationException
-from src.models.base_model import DeclarativeBaseModel
-from src.schemas.base_schemas import BaseSchema
 
 
 def is_valid_model(self=None, model=None):

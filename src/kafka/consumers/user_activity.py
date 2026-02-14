@@ -1,8 +1,6 @@
 import logging
 
-from src.config import db_helper
 from src.kafka.consumers.base_consumer import BaseKafkaConsumer
-from src.user_activity.user_activity_service import UserActivityService
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +17,7 @@ class UserActiveKafkaConsumer(BaseKafkaConsumer):
             return
 
         try:
-            async with db_helper.get_db_session() as session:
-                service = UserActivityService(db_session=session)
-                await service.update_active_user_service(user_id)
+            pass
         except Exception:
             logger.exception("Failed handling user_active event for user_id=%s", user_id)
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from src.utils.context_utils import get_user_id, get_request_id
+from src.utils.context_utils import get_request_id
 
 
 class MessageEnricher:

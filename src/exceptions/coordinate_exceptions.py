@@ -2,7 +2,7 @@ from .base_exceptions import AppException, NoContentResponse, FailedActionExcept
 
 
 class CordsNotFoundException(AppException):
-    def __init__(self, route_id: int = None):
+    def __init__(self, route_id: int | None= None):
         detail = f"coordinates with route ID {route_id} not found" if route_id is not None \
             else "Coordinates not found"
         super().__init__(status_code=404, detail=detail)
@@ -14,12 +14,6 @@ class CordPermissionException(AppException):
 
         super().__init__(status_code=400, detail=detail)
 
-
-# class CordsBadRequest(AppException):
-#     def __init__(self, route_id: int = None):
-#         detail = f"No coordinates with route ID {route_id}" if route_id is not None \
-#             else "No coordinates"
-#         super().__init__(status_code=400, detail=detail)
 
 class CordFailedDeleteException(FailedActionException):
     def __init__(self):
