@@ -13,12 +13,7 @@ class CoordinateRepository(SQLAlchemyRepository):
             offset,
             order: str = "order",
     ):
-        return await self.get_multi(
-            order=order,
-            selected_columns=selected_columns,
-            limit=limit,
-            offset=offset,
-        )
+        pass
 
     async def get_cords_by_route(
             self,
@@ -28,13 +23,7 @@ class CoordinateRepository(SQLAlchemyRepository):
             limit: int = 100,
             order: str = "order",
     ):
-        return await self.get_multi_with_filters(
-            selected_columns=selected_columns,
-            order=order,
-            limit=limit,
-            offset=offset,
-            route_id=route_id,
-        )
+        pass
 
     async def get_single_cord(
             self,
@@ -42,63 +31,42 @@ class CoordinateRepository(SQLAlchemyRepository):
             route_id,
             order,
     ):
-        return await self.get_single(
-            selected_columns=selected_columns,
-            route_id=route_id,
-            order=order
-        )
+        pass
 
     async def get_latest_order(
             self,
             route_id,
     ):
-        return await self.get_max(
-            column_name="order",
-            route_id=route_id,
-        )
+        pass
 
     async def get_first_order(
             self,
             selected_columns,
             route_id,
     ):
-        return await self.get_min(
-            selected_columns=selected_columns,
-            column_name="order",
-            route_id=route_id
-        )
+        pass
 
     async def add_cord(
             self,
             cord_in
     ):
-        return await self.create(
-            schema=cord_in,
-            flush=False
-        )
+        pass
 
     async def add_cords(
             self,
             cords_in,
     ):
-        return await self.multi_create(
-            cords_in,
-        )
+        pass
 
     async def delete_cord(
             self,
             route_id,
             order,
     ):
-        return await self.delete(
-            route_id=route_id,
-            order=order
-        )
+        pass
 
     async def delete_cords_by_route(
             self,
             route_id
     ):
-        return await self.delete(
-            route_id=route_id
-        )
+        pass

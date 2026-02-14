@@ -2,9 +2,9 @@ from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.authentication.schemas import RefreshTokenInternal
-from src.models.models import RefreshToken
-from src.repositories.sqlalchemy_repository import SQLAlchemyRepository
+from src.db.models.models import RefreshToken
+from src.db.repositories.sqlalchemy_repository import SQLAlchemyRepository
+from src.schemas.auth import RefreshTokenInternal
 
 
 class TokenRepository(SQLAlchemyRepository[RefreshToken]):
@@ -40,7 +40,7 @@ class TokenRepository(SQLAlchemyRepository[RefreshToken]):
             self,
             token_hash: str,
             scalar: bool = False
-    ) -> RefreshToken:
+    ) -> RefreshToken | None:
         """
         Вернуть токен по его хэшу
 

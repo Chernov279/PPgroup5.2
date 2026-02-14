@@ -1,10 +1,11 @@
 from typing import List, Optional, Any, TypeVar, Dict, Generic, Union
-from sqlalchemy import func, select, delete, BinaryExpression, insert, update
+from sqlalchemy import ColumnElement, func, select, delete, insert, update
 
-from .base_repository import AbstractRepository
-from ..exceptions.repository_exceptions import NotFoundException
-from ..models.base_model import DeclarativeBaseModel
-from ..schemas.base_schemas import BaseSchema
+from src.db.models.base_model import DeclarativeBaseModel
+from src.db.repositories.base import AbstractRepository
+from src.exceptions.repository_exceptions import NotFoundException
+from src.schemas.base import BaseSchema
+
 
 T = TypeVar('T', bound=DeclarativeBaseModel)
 S = TypeVar('S', bound=BaseSchema)
@@ -24,7 +25,7 @@ class SQLAlchemyRepository(AbstractRepository, Generic[T]):
 
     async def get_single(
             self,
-            *filters: BinaryExpression,
+            *filters: ColumnElement[bool],
             selected_columns: Optional[List[Any]] = None,
             options: Optional[List] = None,
             scalar: bool = False,
@@ -39,7 +40,7 @@ class SQLAlchemyRepository(AbstractRepository, Generic[T]):
             *filters: Условия WHERE (User.age > 18, User.name == "John")
 
         Returns:
-            Row-объект если model_columns указан, иначе объект модели
+            Row-объект если _model_columns_cache указан, иначе объект модели
         """
         if selected_columns:
             stmt = select(*selected_columns).select_from(self.model).where(*filters)
@@ -56,7 +57,7 @@ class SQLAlchemyRepository(AbstractRepository, Generic[T]):
 
     async def get_multi(
             self,
-            *filters: BinaryExpression,
+            *filters: ColumnElement[bool],
             selected_columns: Optional[List[Any]] = None,
             limit: int = 30,
             offset: int = 0,
@@ -77,7 +78,7 @@ class SQLAlchemyRepository(AbstractRepository, Generic[T]):
             scalar: Получение всех моделей или первых столбцов
 
         Returns:
-            Список Row-объектов если model_columns указан, иначе список моделей
+            Список Row-объектов если _model_columns_cache указан, иначе список моделей
         """
         stmt_select = (
             select(*selected_columns).select_from(self.model) if selected_columns else select(self.model))
@@ -279,7 +280,7 @@ class SQLAlchemyRepository(AbstractRepository, Generic[T]):
 
     async def update(
             self,
-            *filters: BinaryExpression,
+            *filters: ColumnElement[bool],
             values: Union[Dict[str, Any], BaseSchema],
     ) -> int:
         """
@@ -305,7 +306,7 @@ class SQLAlchemyRepository(AbstractRepository, Generic[T]):
 
     async def update_orm(
             self,
-            *filters: BinaryExpression,
+            *filters: ColumnElement[bool],
             schema: S,
             flush: bool = True,
     ) -> Optional[T]:
@@ -344,7 +345,7 @@ class SQLAlchemyRepository(AbstractRepository, Generic[T]):
 
     async def update_returning(
             self,
-            *filters: BinaryExpression,
+            *filters: ColumnElement[bool],
             values: Union[Dict[str, Any], BaseSchema],
             returning_columns: Optional[List ]= None
     ) -> Optional[Any]:
@@ -379,7 +380,7 @@ class SQLAlchemyRepository(AbstractRepository, Generic[T]):
 
     async def delete(
         self,
-        *filters: BinaryExpression,
+        *filters: ColumnElement[bool],
     ) -> int:
         """
         Удаляет записи, соответствующие фильтрам.

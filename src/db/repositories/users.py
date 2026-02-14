@@ -1,12 +1,13 @@
-from datetime import datetime
-from typing import Optional, List, Any, Union, Coroutine
+from datetime import datetime, timedelta
+from typing import Optional, List, Any, Union
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .schemas import UserBaseSchema
+from src.schemas.base import BaseSchema
+from src.schemas.schemas import UserBaseSchema
+
 from ..models.models import User
 from ..repositories.sqlalchemy_repository import SQLAlchemyRepository
-from ..schemas.base_schemas import BaseSchema
 
 
 class UserRepository(SQLAlchemyRepository[User]):
@@ -128,7 +129,7 @@ class UserRepository(SQLAlchemyRepository[User]):
             self,
             user_in: BaseSchema,
             returning_columns: List[Any],
-        ) -> Union[User, UserBaseSchema, None]:
+        ) -> Union[User, UserBaseSchema]:
         """
         Создать нового пользователя.
 
@@ -191,7 +192,7 @@ class UserRepository(SQLAlchemyRepository[User]):
 
     async def update_threshold_activity(
             self,
-            threshold: datetime,
+            threshold: timedelta,
             user_id: int
     ):
         stmt = """

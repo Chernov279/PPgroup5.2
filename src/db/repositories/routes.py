@@ -21,12 +21,7 @@ class RouteRepository(SQLAlchemyRepository):
             scalar: bool = False,
             limit: int = 1,
     ):
-        return await self.get_single(
-            selected_columns=selected_columns,
-            id=route_id,
-            scalar=scalar,
-            limit=limit,
-        )
+        pass
 
     async def get_all_routes(
             self,
@@ -47,37 +42,24 @@ class RouteRepository(SQLAlchemyRepository):
             offset,
             selected_columns,
     ):
-        return await self.get_multi_with_filters(
-            limit=limit,
-            offset=offset,
-            selected_columns=selected_columns,
-            user_id=user_id,
-        )
+        pass
 
     async def create_route(
             self,
             route_in,
             flush=True
     ):
-        return await self.create(
-            schema=route_in,
-            flush=flush
-        )
+        pass
 
     async def update_route(
             self,
             route_in,
             pk_values,
     ):
-        return await self.update_by_pk(
-            schema=route_in,
-            pk_values=pk_values,
-        )
+        pass
 
     async def delete_route(
             self,
             pk_values,
     ):
-        return await self.delete_by_pk(
-            pk_values=pk_values,
-        )
+        pass

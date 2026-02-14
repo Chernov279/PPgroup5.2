@@ -1,12 +1,12 @@
-from sqlalchemy.ext.asyncio import async_sessionmaker
-
+from sqlalchemy import Cast
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from .base_uow import BaseUnitOfWork
 
 
 class SqlAlchemyUnitOfWork(BaseUnitOfWork):
     def __init__(self, session_or_factory):
         self.session_or_factory = session_or_factory
-        self.session = None
+        self.session: AsyncSession
 
     async def __aenter__(self):
         if isinstance(self.session_or_factory, async_sessionmaker):
