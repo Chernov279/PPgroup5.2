@@ -2,23 +2,17 @@ from typing import Annotated, List
 
 from fastapi import Depends
 
-from .cord_dependencies import get_coordinate_uow
-from .cord_schemas import CoordinateCreateIn
-from .cord_uow import CoordinateUnitOfWork
-from .cord_utils import create_cords_create_internal
+from src.core.auth.utils.token_utils import get_sub_from_token
+from src.core.coordinate.dependencies import get_coordinate_uow
+from src.core.coordinate.uow import CoordinateUnitOfWork
+from src.core.coordinate.utils import create_cords_create_internal
+from src.db.models.models import Coordinate, Route
+from src.exceptions.base_exceptions import NoContentResponse
+from src.exceptions.coordinate_exceptions import CordFailedDeleteException, CordPermissionException, CordsDeletedException, CordsNotFoundException
+from src.exceptions.route_exceptions import RouteNotFoundException
+from src.schemas.coordinates import CoordinateCreateIn
+from src.utils.database_utils import valid_limit, valid_offset
 
-from ..config.token_config import oauth2_scheme
-from ..exceptions.base_exceptions import NoContentResponse
-from ..exceptions.coordinate_exceptions import (
-    CordsNotFoundException,
-    CordPermissionException,
-    CordsDeletedException,
-    CordFailedDeleteException
-)
-from ..exceptions.route_exceptions import RouteNotFoundException
-from ..models.models import Coordinate, Route
-from ..token_app.token_utils import get_sub_from_token
-from ..utils.database_utils import valid_limit, valid_offset
 
 
 class CoordinateService:
@@ -63,10 +57,9 @@ class CoordinateService:
     async def add_cords_by_route_service(
             route_id: int,
             coordinates_in: List[CoordinateCreateIn],
-            token: Annotated[str, Depends(oauth2_scheme)],
+            user_id: Annotated[str, Depends(get_sub_from_token)],
             cord_uow: CoordinateUnitOfWork = Depends(get_coordinate_uow)
     ):
-        user_id = get_sub_from_token(token)
         async with cord_uow as uow:
             user_id_route = await uow.get_user_by_route(
                 route_id=route_id,
@@ -95,10 +88,9 @@ class CoordinateService:
     @staticmethod
     async def delete_all_cords_by_route_service(
             route_id: int,
-            token: Annotated[str, Depends(oauth2_scheme)],
+            user_id: Annotated[str, Depends(get_sub_from_token)],
             cord_uow: CoordinateUnitOfWork = Depends(get_coordinate_uow)
     ):
-        user_id = get_sub_from_token(token)
         async with cord_uow as uow:
             user_id_route = await uow.get_user_by_route(
                 route_id=route_id,

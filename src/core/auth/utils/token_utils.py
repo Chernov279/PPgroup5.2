@@ -5,9 +5,8 @@ from typing import Optional, Union
 
 import jwt
 from fastapi import HTTPException
-from starlette.requests import Request
 
-from src.config.token_config import oauth2_scheme, settings_token
+from src.config import settings
 from src.exceptions.token_exceptions import InvalidTokenUserException
 
 
@@ -30,7 +29,7 @@ def set_refresh_token_cookie(response, refresh_token: str) -> None:
         httponly=True,
         secure=True,
         samesite="lax",
-        max_age=settings_token.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
         path="/get_token",
     )
 
@@ -120,11 +119,11 @@ def create_access_jwt_token(
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings_token.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     if data is not None:
         to_encode = data.copy()
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, settings_token.SECRET_KEY, algorithm=settings_token.ALGORITHM)
+        encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
         return encoded_jwt
     data = {
         "sub": f'{user_id}' if user_id else "",
@@ -132,11 +131,11 @@ def create_access_jwt_token(
         "type": "access"
     }
 
-    encoded_jwt = jwt.encode(data, settings_token.SECRET_KEY, algorithm=settings_token.ALGORITHM)
+    encoded_jwt = jwt.encode(data, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
 
-def verify_jwt_token(token: str) -> dict | None:
+def verify_jwt_token(token: str) -> dict:
     """
     Проверка валидности JWT токена.
 
@@ -149,23 +148,23 @@ def verify_jwt_token(token: str) -> dict | None:
 
     ### Возвращаемые данные:
     - `dict`: Декодированный payload токена.
-    - `None`: Если токен недействителен или истёк.
+    -Exception: Если токен недействителен или истёк.
     """
     try:
-        decoded_jwt = jwt.decode(token, settings_token.SECRET_KEY, algorithms=[settings_token.ALGORITHM])
+        decoded_jwt = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         return decoded_jwt
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
-    except Exception as e:
+    except Exception:
         raise HTTPException(status_code=401, detail="Token not decoded")
 
 
 def get_sub_from_token(token, raise_exception: bool = True) -> Optional[int]:
     try:
         payload = verify_jwt_token(token)
-        user_id = payload.get("sub", None)
+        user_id = payload.get("sub")
         if not user_id:
             raise InvalidTokenUserException()
         if isinstance(user_id, str):
@@ -180,4 +179,4 @@ def get_sub_from_token(token, raise_exception: bool = True) -> Optional[int]:
             return None
 
 def get_token_expires_at():
-    return datetime.now(timezone.utc) + timedelta(days=settings_token.REFRESH_TOKEN_EXPIRE_DAYS)
+    return datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)

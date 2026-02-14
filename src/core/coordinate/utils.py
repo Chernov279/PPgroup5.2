@@ -1,7 +1,7 @@
 from typing import Any
 
-from .cord_schemas import CoordinateInternal, CoordinateCreateIn
-from ..utils.schema_utils import add_internal_params
+from src.schemas.coordinates import CoordinateInternal
+from src.utils.schema_utils import add_internal_params
 
 
 def create_cords_create_internal(

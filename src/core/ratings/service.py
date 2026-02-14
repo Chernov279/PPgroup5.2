@@ -2,24 +2,22 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.config.token_config import oauth2_scheme
-from src.exceptions.rating_exceptions import RatingNotFoundException, RatingAlreadyExistsException, \
-    RatingFailedActionException
-from src.rating_route.rat_dependencies import get_rating_uow
-from src.rating_route.rat_schemas import RatingPKs, RatingShortOut, RatingCreateIn, RatingCreateInInternal, \
-    RatingUpdateIn, RatingUpdateInternal
-from src.rating_route.rat_uow import RatingUnitOfWork
+from src.api.dependencies import get_optional_token
+from src.core.auth.utils.token_utils import get_sub_from_token
+from src.core.ratings.dependencies import get_ratings_uow
+from src.core.ratings.uow import RatingUnitOfWork
+from src.exceptions.rating_exceptions import RatingAlreadyExistsException, RatingFailedActionException, RatingNotFoundException
+from src.schemas.ratings import RatingCreateIn, RatingCreateInInternal, RatingPKs, RatingShortOut, RatingUpdateIn, RatingUpdateInternal
 from src.redis.avg_rat_cache import AvgRatingCache
 from src.redis.redis_dependencies import get_avg_rat_cache
 from src.schemas.database_params_schemas import MultiGetParams
-from src.token_app.token_utils import get_sub_from_token
 from src.utils.schema_utils import add_internal_params
 
 
 class RatingService:
     @staticmethod
     async def get_all_ratings(
-            rating_uow: RatingUnitOfWork = Depends(get_rating_uow),
+            rating_uow: RatingUnitOfWork = Depends(get_ratings_uow),
             multi_get_params: MultiGetParams = Depends(),
     ):
 
@@ -34,7 +32,7 @@ class RatingService:
     @staticmethod
     async def get_rating_by_pks(
             primary_keys: Annotated[RatingPKs, Depends()],
-            rating_uow: RatingUnitOfWork = Depends(get_rating_uow),
+            rating_uow: RatingUnitOfWork = Depends(get_ratings_uow),
 ):
 
         rating = await rating_uow.get_rating_by_pks_uow(
@@ -47,8 +45,8 @@ class RatingService:
 
     @staticmethod
     async def get_all_my_ratings(
-            token: Annotated[str, Depends(oauth2_scheme)],
-            rating_uow: RatingUnitOfWork = Depends(get_rating_uow),
+            token: Annotated[str, Depends(get_optional_token)],
+            rating_uow: RatingUnitOfWork = Depends(get_ratings_uow),
             multi_get_params: MultiGetParams = Depends(),
     ):
         user_id = get_sub_from_token(token)
@@ -65,9 +63,9 @@ class RatingService:
 
     @staticmethod
     async def get_my_rating_by_route(
-            token: Annotated[str, Depends(oauth2_scheme)],
+            token: Annotated[str, Depends(get_optional_token)],
             route_id: int,
-            rating_uow: RatingUnitOfWork = Depends(get_rating_uow),
+            rating_uow: RatingUnitOfWork = Depends(get_ratings_uow),
     ):
         user_id = get_sub_from_token(token)
 
@@ -84,8 +82,8 @@ class RatingService:
     @staticmethod
     async def create_rating(
             rating_in: RatingCreateIn,
-            token: Annotated[str, Depends(oauth2_scheme)],
-            rating_uow: RatingUnitOfWork = Depends(get_rating_uow),
+            token: Annotated[str, Depends(get_optional_token)],
+            rating_uow: RatingUnitOfWork = Depends(get_ratings_uow),
             avg_rat_cache: AvgRatingCache = Depends(get_avg_rat_cache),
     ):
         user_id = get_sub_from_token(token)
@@ -114,8 +112,8 @@ class RatingService:
     @staticmethod
     async def update_rating_by_route(
             rating_in: RatingUpdateIn,
-            token: Annotated[str, Depends(oauth2_scheme)],
-            rating_uow: RatingUnitOfWork = Depends(get_rating_uow),
+            token: Annotated[str, Depends(get_optional_token)],
+            rating_uow: RatingUnitOfWork = Depends(get_ratings_uow),
             avg_rat_cache: AvgRatingCache = Depends(get_avg_rat_cache),
     ):
 
@@ -123,7 +121,7 @@ class RatingService:
         rating_internal = add_internal_params(rating_in, RatingUpdateInternal, user_id=user_id)
 
         updated_rating = await rating_uow.update_rating_uow(
-            # selected_columns=RatingShortOut.get_selected_columns(),
+            # _model_columns_cache=RatingShortOut.get_selected_columns(),
             rating_in=rating_internal
         )
         await avg_rat_cache.invalidate(route_id=rating_in.route_id)
@@ -133,8 +131,8 @@ class RatingService:
     @staticmethod
     async def delete_rating_by_route(
             route_id: int,
-            token: Annotated[str, Depends(oauth2_scheme)],
-            rating_uow: RatingUnitOfWork = Depends(get_rating_uow),
+            token: Annotated[str, Depends(get_optional_token)],
+            rating_uow: RatingUnitOfWork = Depends(get_ratings_uow),
             avg_rat_cache: AvgRatingCache = Depends(get_avg_rat_cache)
     ):
         user_id = get_sub_from_token(token)
@@ -153,7 +151,7 @@ class RatingService:
     @staticmethod
     async def get_avg_rating_by_route(
             route_id: int,
-            rating_uow: RatingUnitOfWork = Depends(get_rating_uow),
+            rating_uow: RatingUnitOfWork = Depends(get_ratings_uow),
             avg_rat_cache: AvgRatingCache = Depends(get_avg_rat_cache)
     ):
         avg_rating = await avg_rat_cache.get_rating(route_id)

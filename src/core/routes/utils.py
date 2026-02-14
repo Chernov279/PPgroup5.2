@@ -1,5 +1,5 @@
+from src.schemas.routes import RouteDetailOut
 from src.exceptions.base_exceptions import AppException
-from src.route.route_schemas import RouteDetailOut
 from src.utils.schema_utils import add_internal_params
 
 

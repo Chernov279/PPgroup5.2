@@ -1,9 +1,10 @@
 from typing import Optional, List
 
+from src.db.repositories.ratings import RatingRepository
+from src.db.repositories.routes import RouteRepository
+from src.db.repositories.sqlalchemy_uow import SqlAlchemyUnitOfWork
 from src.exceptions.route_exceptions import RouteNotFoundException
-from src.rating_route.rat_repository import RatingRepository
-from src.repositories.sqlalchemy_uow import SqlAlchemyUnitOfWork
-from src.route.route_repository import RouteRepository
+
 
 
 class RatingUnitOfWork(SqlAlchemyUnitOfWork):

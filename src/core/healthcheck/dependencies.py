@@ -1,20 +1,21 @@
 import logging
 import time
+from typing import List
 
 from sqlalchemy import text
 from aiokafka.errors import KafkaConnectionError
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config import db_helper
+from src.db.models.base_model import DeclarativeBaseModel
 from src.kafka.consumers.base_consumer import BaseKafkaConsumer
 from src.kafka.producers.producer import kafka_producer
-from src.models.base_model import DeclarativeBaseModel
 from src.redis.redis_helper import redis_dbs
 
 
 logger = logging.getLogger(__name__)
 
 
-async def check_kafka(kafka_consumers: [BaseKafkaConsumer]):
+async def check_kafka(kafka_consumers: List[BaseKafkaConsumer]):
     """
     Проверка Kafka:
       1) send_and_wait (producer) — проверка, что брокер принял сообщение (ack)
@@ -43,7 +44,7 @@ async def check_kafka(kafka_consumers: [BaseKafkaConsumer]):
         if running:
             number_running_consumers += 1
         else:
-            non_running_consumers += cons
+            non_running_consumers.append(cons)
 
     if not non_running_consumers:
         logger.info("Kafka healthcheck: all consumers are running")
@@ -78,17 +79,16 @@ async def check_redis():
     logger.info("Redis healthcheck: all redis DBs OK")
 
 
-async def check_postgres():
+async def check_postgres(session: AsyncSession):
     logger.info("Postgres healthcheck: checking declared tables presence")
-    async with db_helper.get_db_session() as session:
-        result = await session.execute(
-            text("""
-                SELECT tablename
-                FROM pg_tables
-                WHERE schemaname = 'public'
-            """)
-        )
-        existing_tables = {row[0] for row in result.fetchall()}
+    result = await session.execute(
+        text("""
+            SELECT tablename
+            FROM pg_tables
+            WHERE schemaname = 'public'
+        """)
+    )
+    existing_tables = {row[0] for row in result.fetchall()}
 
     declared_tables = set(DeclarativeBaseModel.metadata.tables.keys())
 

@@ -1,9 +1,10 @@
 from typing import Optional, List
 
-from ..models.models import User
-from ..repositories.sqlalchemy_uow import SqlAlchemyUnitOfWork
+from src.db.models.models import User
+from src.db.repositories.routes import RouteRepository
+from src.db.repositories.sqlalchemy_uow import SqlAlchemyUnitOfWork
+from src.db.repositories.users import UserRepository
 
-from .route_repository import RouteRepository
 
 
 class RouteUnitOfWork(SqlAlchemyUnitOfWork):
@@ -35,13 +36,9 @@ class RouteUnitOfWork(SqlAlchemyUnitOfWork):
 
     ):
         try:
-            from src.user.user_repository import UserRepository
+            
             selected_columns = User.get_columns_by_names("name")
-            user_name = await UserRepository(db_session=self.db_session).get_user_by_id(
-                user_id=user_id,
-                selected_columns=selected_columns,
-                scalar=True
-            )
+            user_name = await UserRepository(db_session=self.db_session).get_user_model_by_id(user_id=user_id)
             # TODO
             # from src.coordinate.cord_repository import CoordinateRepository
             # amount_points = await CoordinateRepository(db_session=self.db_session).get_amount_cords(

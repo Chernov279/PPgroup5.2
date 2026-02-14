@@ -3,25 +3,15 @@ from datetime import timedelta, datetime, timezone
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette import status
 
-from .repository import UserRepository
-from .schemas import (
-    UserUpdateIn,
-    UserDetailOut,
-    UserShortOut,
-    UserActivityInternal,
-    UserActivityOut, UserUpdateActivityOut
-)
-from .utils import format_user_activity
-from ..exceptions.base_exceptions import FailedActionException, NoContentResponse
+from src.core.user.utils import format_user_activity
+from src.db.repositories.users import UserRepository
+from src.exceptions.base_exceptions import FailedActionException
+from src.exceptions.user_exceptions import UserFailedDeleteException, UserNotFoundException
+from src.schemas.database_params_schemas import MultiGetParams
+from src.schemas.schemas import UserActivityInternal, UserActivityOut, UserDetailOut, UserShortOut, UserUpdateIn
+from src.utils.schema_utils import add_internal_params
 
-from ..exceptions.user_exceptions import (
-    UserNotFoundException,
-    UserFailedDeleteException
-)
-from ..schemas.database_params_schemas import MultiGetParams
-from ..utils.schema_utils import add_internal_params
 
 logger = logging.getLogger(__name__)
 

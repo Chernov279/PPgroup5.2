@@ -2,18 +2,16 @@ from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.authentication.schemas import AuthRegisterIn, AuthRegisterInternal, TokensOut, RefreshTokenInternal, \
-    AuthLoginIn, LogoutAllOut, LogoutOut
-from src.authentication.utils.auth_utils import is_valid_create_user_data
-from src.authentication.utils.security import hash_password, verify_password
-from src.authentication.utils.token_utils import create_access_token, create_refresh_token, hash_refresh_token, \
-    get_token_expires_at
+from src.core.auth.utils.auth_utils import is_valid_create_user_data
+from src.core.auth.utils.security import hash_password, verify_password
+from src.core.auth.utils.token_utils import create_access_token, create_refresh_token, get_token_expires_at, hash_refresh_token
+from src.db.models.models import User
+from src.db.repositories.refresh_token import TokenRepository
+from src.db.repositories.users import UserRepository
+from src.schemas.auth import AuthLoginIn, AuthRegisterIn, AuthRegisterInternal, LogoutAllOut, LogoutOut, RefreshTokenInternal, TokensOut
 from src.exceptions.auth_exceptions import InvalidCredentialsException, EmailAlreadyExistsException
 from src.exceptions.base_exceptions import FailedActionException
 from src.exceptions.token_exceptions import InvalidTokenException, TokenRevokedException, TokenExpiredException
-from src.models.models import User
-from src.repositories.refresh_token_repository import TokenRepository
-from src.user.repository import UserRepository
 
 
 class AuthService:

@@ -1,7 +1,8 @@
 from typing import Optional, List
 
-from src.coordinate.cord_repository import CoordinateRepository
-from src.repositories.sqlalchemy_uow import SqlAlchemyUnitOfWork
+from src.db.repositories.coordinates import CoordinateRepository
+from src.db.repositories.routes import RouteRepository
+from src.db.repositories.sqlalchemy_uow import SqlAlchemyUnitOfWork
 
 
 class CoordinateUnitOfWork(SqlAlchemyUnitOfWork):
@@ -49,7 +50,7 @@ class CoordinateUnitOfWork(SqlAlchemyUnitOfWork):
             route_id,
             selected_columns,
     ):
-        from src.route.route_repository import RouteRepository
+        
         route_repo = RouteRepository(self.db_session)
         try:
             user_id = await route_repo.get_route_by_id(
