@@ -1,10 +1,10 @@
 import datetime
-from typing import Optional, Any
+from typing import Optional
 
-from fastapi import Query
+from src.db.models.models import User
+from src.schemas.base import BaseSchema
 
-from ..models.models import User
-from ..schemas.base_schemas import BaseSchema
+
 
 
 class UserBaseSchema(BaseSchema):
@@ -19,7 +19,6 @@ class UserCreateIn(UserBaseSchema):
 
 class UserUpdateIn(UserBaseSchema):
     surname: str | None = None
-    patronymic: str | None = None
     location: str | None = None
     sex: str | None = None
     birth: str | None = None

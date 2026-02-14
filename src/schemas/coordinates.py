@@ -1,11 +1,13 @@
-from ..models.models import Coordinate
-from ..schemas.base_schemas import BaseSchema
+
+
+
+from src.schemas.base import BaseSchema
 
 
 class CoordinateBaseSchema(BaseSchema):
     @classmethod
-    def get_selected_columns(cls, cls_model=Coordinate):
-        return super().get_selected_columns(cls_model)
+    def get_selected_columns(cls, cls_model=...):
+        pass
 
 
 class CoordinateOut(CoordinateBaseSchema):

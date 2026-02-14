@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Optional
 
-from src.config import settings_token
-from src.schemas.base_schemas import BaseSchema
-from src.user.schemas import UserBaseSchema
+from src.config import settings
+from src.schemas.base import BaseSchema
+from src.schemas.schemas import UserBaseSchema
 
 TOKEN_TYPE: str = 'Bearer'
 
@@ -39,7 +39,7 @@ class TokensOut(BaseSchema):
     access_token: str
     refresh_token: str
     token_type: str = TOKEN_TYPE
-    access_expires_in: int = settings_token.ACCESS_TOKEN_EXPIRE_MINUTES
+    access_expires_in: int = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 class AccessTokenOut(BaseSchema):

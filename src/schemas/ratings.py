@@ -2,15 +2,15 @@ from typing import Optional
 
 from fastapi import Query
 
-from src.models.models import Rating
-from src.schemas.base_schemas import BaseSchema
 import datetime
+
+from src.schemas.base import BaseSchema
 
 
 class RatingBaseSchema(BaseSchema):
     @classmethod
-    def get_selected_columns(cls, cls_model=Rating):
-        return super().get_selected_columns(cls_model)
+    def get_selected_columns(cls, cls_model=...):
+        pass
 
 
 class RatingShortOut(RatingBaseSchema):

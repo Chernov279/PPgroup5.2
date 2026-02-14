@@ -1,6 +1,6 @@
+from src.schemas.base import BaseSchema
 from src.exceptions.base_exceptions import AppException
 from pydantic import BaseModel
-from src.schemas.base_schemas import BaseSchema
 
 
 def add_internal_params(schema, cls_internal, raise_exception: bool = True, **params):

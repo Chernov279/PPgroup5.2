@@ -1,7 +1,7 @@
 from fastapi import Query
 from pydantic import field_validator
 
-from src.schemas.base_schemas import BaseSchema
+from src.schemas.base import BaseSchema
 from src.utils.database_utils import valid_limit, valid_offset
 
 
